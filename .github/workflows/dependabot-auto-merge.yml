@@ -1,0 +1,17 @@
+name: '🤖 Dependabot auto merge'
+
+on:
+  pull_request:
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛬
+        uses: actions/checkout@v4
+      - name: Auto merge 🚀
+        uses: ahmadnassri/action-dependabot-auto-merge@v2
+        with:
+          target: minor
+          github-token: ${{ secrets.PAT_GITHUB_TOKEN }}
+          command: squash and merge

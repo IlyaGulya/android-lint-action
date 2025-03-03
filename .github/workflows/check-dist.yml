@@ -1,0 +1,72 @@
+name: '👮 Check dist'
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - '**.md'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+  workflow_dispatch:
+
+jobs:
+  check-dist:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout 🛬
+        uses: actions/checkout@v4
+      - name: Setup Node ⚙️
+        uses: ./.github/actions/setup-node
+      - name: Build dist folder 📦
+        run: pnpm build
+      - name: Finding previous comment 🔎
+        uses: peter-evans/find-comment@v3
+        if: ${{ github.event_name == 'pull_request' }}
+        id: find-comment
+        with:
+          issue-number: ${{ github.event.number }}
+          comment-author: 'github-actions[bot]'
+          body-includes: '## 👮🏻 Detected mismatch in the `dist` directory'
+      - name: Delete previous comment 🗑️
+        uses: actions/github-script@v7
+        if: ${{ github.event_name == 'pull_request' && steps.find-comment.outputs.comment-id != '' }}
+        with:
+          result-encoding: string
+          retries: 3
+          script: |
+            github.rest.issues.deleteComment({
+              comment_id: ${{ steps.find-comment.outputs.comment-id }},
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+            })
+      - name: Compare the expected and actual dist/ directories 🕵️
+        id: diff
+        run: |
+          if [ "$(git diff --ignore-space-at-eol dist/ | wc -l)" -gt "0" ]; then
+            echo "👮🏻 Detected mismatch"
+            echo "👇 See status below"
+            git diff
+            exit 1
+          fi
+      - name: Upload expected dist/ directory ☁️
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() && steps.diff.conclusion == 'failure' }}
+        id: artifact-dist
+        with:
+          name: dist
+          path: dist/
+      - name: Write mismatch comment 💬
+        uses: peter-evans/create-or-update-comment@v4
+        if: ${{ failure() && steps.diff.conclusion == 'failure' && github.event_name == 'pull_request' }}
+        with:
+          issue-number: ${{ github.event.number }}
+          body: |
+            ## 👮🏻 Detected mismatch in the `dist` directory
+            > [!TIP]
+            > This issue can be fixed automatically if you write a comment with `/generate-dist` in this PR.
+            > Also, you can fix it manually by running `pnpm build` and then commit and push the changes.

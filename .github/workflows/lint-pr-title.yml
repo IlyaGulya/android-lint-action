@@ -1,0 +1,45 @@
+name: '💅 Lint PR Title'
+
+on:
+  pull_request:
+    types: [opened, edited, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+
+jobs:
+  main:
+    name: Validate PR title 🕵️
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate pull request title 👮🏻
+        uses: amannn/action-semantic-pull-request@v5
+        id: lint_pr_title
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          ignoreLabels: |
+            bot
+            autorelease: pending
+      - name: Write comment with error 💬
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: always() && (steps.lint_pr_title.outputs.error_message != null)
+        with:
+          header: pr-title-lint-error
+          message: |
+            Hey mate 👋. Thank you for opening this Pull Request 🤘. It is really awesome to see this contribution 🚀
+
+            🔎 When working with this project we are requesting to follow the [Conventional Commits specification](https://www.conventionalcommits.org/en/v1.0.0/) and it looks like your proposed title needs to be adjusted 🥶.
+
+            👇 Bellow you can find details about what failed:
+
+            ```
+            ${{ steps.lint_pr_title.outputs.error_message }}
+            ```
+
+      - if: ${{ steps.lint_pr_title.outputs.error_message == null }}
+        name: Delete comment 🗑️
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: pr-title-lint-error
+          delete: true

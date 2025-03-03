@@ -1,0 +1,20 @@
+name: '🐢 Node'
+
+on:
+  push:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout 🛬
+        uses: actions/checkout@v4
+      - name: Setup Node ⚙️
+        uses: ./.github/actions/setup-node
+      - name: Build typescript 📦
+        run: pnpm build && find dist/index.js
+      - name: Lint code 💅
+        run: pnpm lint
+      - name: Run tests ✅
+        run: pnpm test

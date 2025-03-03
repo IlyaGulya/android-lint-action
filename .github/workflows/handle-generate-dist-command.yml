@@ -1,0 +1,32 @@
+name: '📦 Handle Generate dist Command'
+
+on:
+  repository_dispatch:
+    types: [generate-dist-command]
+
+jobs:
+  generate-dist:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout 🛬
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.client_payload.pull_request.head.ref }}
+          token: ${{ secrets.PAT_GITHUB_TOKEN }}
+      - name: Setup Node ⚙️
+        uses: ./.github/actions/setup-node
+      - name: Build typescript 📦
+        run: pnpm build && find dist/index.js
+      - name: Commit and push dist folder 🚀
+        uses: EndBug/add-and-commit@v9
+        with:
+          message: 'chore(dist): generate dist folder'
+          add: 'dist'
+          push: true
+          author_name: github-actions
+          author_email: github-actions@github.com
+      - name: Mark command as done ✅
+        uses: peter-evans/create-or-update-comment@v4
+        with:
+          comment-id: ${{ github.event.client_payload.github.payload.comment.id }}
+          reactions: hooray

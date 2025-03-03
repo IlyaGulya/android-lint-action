@@ -1,0 +1,18 @@
+extends: default
+
+ignore: |
+  node_modules/
+  pnpm-lock.yaml
+
+rules:
+  document-start:
+    present: false
+  line-length:
+    ignore: |
+      /.github/actions/**/*.yml
+      /.github/workflows/*.yml
+      /.github/settings.yml
+      /action.yml
+  truthy:
+    ignore: |
+      /.github/workflows/*.yml
