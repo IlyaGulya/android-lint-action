@@ -1,19 +1,29 @@
-name: 'github-action-nodejs-template'
-description: 'Template for new Github Actions based on Typescript with the Best Practices and Ready to be Released'
-author: 'Albert Hernandez'
+name: 'android-lint-action'
+description: 'Runs Android Lint and reports issues using reviewdog'
+author: 'Ilya Gulya'
 branding:
-  icon: 'package'
-  color: 'blue'
+  icon: 'check-circle'
+  color: 'green'
 
 inputs:
-  name:
-    description: 'Name the action will use to say Hello.'
+  github_token:
+    description: 'GITHUB_TOKEN to use for reviewdog'
+    required: true
+  lint_xml_file:
+    description: 'Path to the Android Lint XML result file'
+    required: true
+  reporter:
+    description: 'Reporter of reviewdog [github-pr-check,github-pr-review,github-check]'
     required: false
-    default: 'World'
-
-outputs:
-  message:
-    description: 'Hello world message'
+    default: 'github-pr-check'
+  level:
+    description: 'Report level for reviewdog [info,warning,error]'
+    required: false
+    default: 'warning'
+  reviewdog_flags:
+    description: 'Additional reviewdog flags'
+    required: false
+    default: ''
 
 runs:
   using: 'node20'
