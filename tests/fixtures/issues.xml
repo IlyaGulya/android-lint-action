@@ -1,0 +1,1324 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<issues format="6" by="lint 8.6.1" type="baseline" client="gradle" dependencies="true" name="AGP (8.6.1)" variant="all" version="8.6.1">
+
+  <issue
+    id="MissingPermission"
+    message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+    errorLine1="            locationManager.requestLocationUpdates("
+    errorLine2="            ^">
+    <location
+      file="src/main/java/someproject/feature/location/monitoring/data/android/AndroidLocationManager.kt"
+      line="39"
+      column="13"/>
+  </issue>
+
+  <issue
+    id="MissingPermission"
+    message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+    errorLine1="                fusedProvider.requestLocationUpdates(mLocationRequest, locationCallback, Looper.getMainLooper())"
+    errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/feature/location/monitoring/data/gms/FusedLocationManager.kt"
+      line="54"
+      column="17"/>
+  </issue>
+
+  <issue
+    id="MissingPermission"
+    message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+    errorLine1="            map.isMyLocationEnabled = isMyLocationEnabled"
+    errorLine2="            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/map/delegate/GoogleMapDelegate.kt"
+      line="389"
+      column="13"/>
+  </issue>
+
+  <issue
+    id="MissingPermission"
+    message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+    errorLine1="                map.isMyLocationEnabled = isMyLocationEnabled"
+    errorLine2="                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/map/view/GoogleMapView.kt"
+      line="997"
+      column="17"/>
+  </issue>
+
+  <issue
+    id="MissingPermission"
+    message="Call requires permission which may be rejected by user: code should explicitly check to see if permission is available (with `checkPermission`) or explicitly handle a potential `SecurityException`"
+    errorLine1="                    map.locationComponent.isLocationComponentEnabled = isMyLocationEnabled"
+    errorLine2="                    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/map/delegate/MapLibreMapDelegate.kt"
+      line="544"
+      column="21"/>
+  </issue>
+
+  <issue
+    id="MissingPermission"
+    message="Missing permissions required by TelephonyManager.getDeviceId: android.permission.READ_PRIVILEGED_PHONE_STATE"
+    errorLine1="            return tm.deviceId"
+    errorLine2="                   ~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/legacy/common/utils/TelManager.kt"
+      line="23"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="UnknownId"
+    message="The id &quot;`player_order_actions_stub_0_view`&quot; is not defined anywhere."
+    errorLine1="        app:constraint_referenced_ids=&quot;player_order_actions_stub_1,player_order_actions_stub_0,"
+    errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/res/layout/player_order_container_done.xml"
+      line="75"
+      column="9"/>
+  </issue>
+
+  <issue
+    id="UnknownId"
+    message="The id &quot;`player_order_actions_stub_1_view`&quot; is not defined anywhere."
+    errorLine1="        app:constraint_referenced_ids=&quot;player_order_actions_stub_1,player_order_actions_stub_0,"
+    errorLine2="        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/res/layout/player_order_container_done.xml"
+      line="75"
+      column="9"/>
+  </issue>
+
+  <issue
+    id="NewApi"
+    message="Call requires API level 34 (current min is 24): `android.app.NotificationManager#canUseFullScreenIntent`"
+    errorLine1="        return notificationManager.canUseFullScreenIntent()"
+    errorLine2="                                   ~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/module/core/troubleshooting/impl/data/repository/FullscreenIntentPermissionRepository.kt"
+      line="17"
+      column="36"/>
+  </issue>
+
+  <issue
+    id="NewApi"
+    message="Call requires API level 34 (current min is 24): `canShowFullscreenIntent`"
+    errorLine1="        return fullscreenIntentBannerRepository.canShowFullscreenIntent()"
+    errorLine2="                                                ~~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/some/domain/interactor/someFullscreenIntentBannerInteractor.kt"
+      line="18"
+      column="49"/>
+  </issue>
+
+  <issue
+    id="DiffUtilEquals"
+    message="Suspicious equality check: `equals()` is not implemented in ButtonAction"
+    errorLine1="    override fun areContentsTheSame(oldItem: ButtonAction, newItem: ButtonAction): Boolean = oldItem == newItem"
+    errorLine2="                                                                                                     ~~">
+    <location
+      file="src/main/java/someproject/interclass/common/ui/buttons_dialog/ButtonUiCallback.kt"
+      line="9"
+      column="102"/>
+  </issue>
+
+  <issue
+    id="DiffUtilEquals"
+    message="Suspicious equality check: `equals()` is not implemented in OrderAction"
+    errorLine1="    override fun areContentsTheSame(oldItem: OrderAction, newItem: OrderAction): Boolean = oldItem == newItem"
+    errorLine2="                                                                                                   ~~">
+    <location
+      file="src/main/java/someproject/interclass/common/ui/dialogs/action_dialog/CellUiCallback.kt"
+      line="9"
+      column="100"/>
+  </issue>
+
+  <issue
+    id="DiffUtilEquals"
+    message="Suspicious equality check: `equals()` is not implemented in T"
+    errorLine1="        oldItem == newItem"
+    errorLine2="                ~~">
+    <location
+      file="src/main/java/someproject/common/ui/recycler/items/IdentifiableItemUiCallback.kt"
+      line="11"
+      column="17"/>
+  </issue>
+
+  <issue
+    id="DiffUtilEquals"
+    message="Suspicious equality check: `equals()` is not implemented in Object"
+    errorLine1="            oldItem == newItem"
+    errorLine2="                    ~~">
+    <location
+      file="src/main/java/someproject/cargo/client/ui/offer/offers/recycler/OffersAdapter.kt"
+      line="24"
+      column="21"/>
+  </issue>
+
+  <issue
+    id="DiffUtilEquals"
+    message="Suspicious equality check: `equals()` is not implemented in Bitmap"
+    errorLine1="        override fun areContentsTheSame(oldItem: Bitmap, newItem: Bitmap): Boolean = oldItem == newItem"
+    errorLine2="                                                                                             ~~">
+    <location
+      file="src/main/java/someproject/feature/pdf_screen/ui/adapter/PdfAdapter.kt"
+      line="28"
+      column="94"/>
+  </issue>
+
+  <issue
+    id="DiffUtilEquals"
+    message="Suspicious equality check: `equals()` is not implemented in Bitmap"
+    errorLine1="        override fun areContentsTheSame(oldItem: Bitmap, newItem: Bitmap): Boolean = oldItem == newItem"
+    errorLine2="                                                                                             ~~">
+    <location
+      file="src/main/java/someproject/feature/file_storage/feature/pdf/ui/PdfAdapter.kt"
+      line="30"
+      column="94"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="PatternsCompat.AUTOLINK_WEB_URL can only be accessed from within the same library group prefix (referenced groupId=`androidx.core` with prefix androidx from groupId=`someProject.features`)"
+    errorLine1="        return PatternsCompat.AUTOLINK_WEB_URL.matcher(urlString).matches()"
+    errorLine2="                              ~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/feature/webview/BaseWebViewClient.kt"
+      line="174"
+      column="31"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper can only be accessed from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="    private val textDrawableHelper: TextDrawableHelper = TextDrawableHelper(this)"
+    errorLine2="                                    ~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="78"
+      column="37"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="    private val textDrawableHelper: TextDrawableHelper = TextDrawableHelper(this)"
+    errorLine2="                                                         ~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="78"
+      column="58"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="    private val textDrawableHelper: TextDrawableHelper = TextDrawableHelper(this)"
+    errorLine2="                                                                            ~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="78"
+      column="77"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textDrawableHelper.textPaint.density = context.resources.displayMetrics.density"
+    errorLine2="                           ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="102"
+      column="28"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textDrawableHelper.textPaint.density = context.resources.displayMetrics.density"
+    errorLine2="                           ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="102"
+      column="28"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="MaterialShapeDrawable.compositeElevationOverlayIfNeeded can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        newBackgroundColorRes = compositeElevationOverlayIfNeeded(newBackgroundColorRes)"
+    errorLine2="                                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="134"
+      column="33"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance.getTextColor can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        val newTextColor = textDrawableHelper.textAppearance?.textColor?.getColorForState(state, currentTextColor) ?: 0"
+    errorLine2="                                                              ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="140"
+      column="63"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance.getTextColor can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        val newTextColor = textDrawableHelper.textAppearance?.textColor?.getColorForState(state, currentTextColor) ?: 0"
+    errorLine2="                                                              ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="140"
+      column="63"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        val newTextColor = textDrawableHelper.textAppearance?.textColor?.getColorForState(state, currentTextColor) ?: 0"
+    errorLine2="                                              ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="140"
+      column="47"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        val newTextColor = textDrawableHelper.textAppearance?.textColor?.getColorForState(state, currentTextColor) ?: 0"
+    errorLine2="                                              ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="140"
+      column="47"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextWidth can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            val textWidth = textDrawableHelper.getTextWidth(text.toString())"
+    errorLine2="                                               ~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="155"
+      column="48"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableDelegate.onTextSizeChange can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="    override fun onTextSizeChange() {"
+    errorLine2="                 ~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="165"
+      column="18"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.setTextWidthDirty can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textDrawableHelper.isTextWidthDirty = true"
+    errorLine2="                               ~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="191"
+      column="32"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.setTextWidthDirty can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textDrawableHelper.isTextWidthDirty = true"
+    errorLine2="                               ~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="191"
+      column="32"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance.setTextColor can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textAppearance.textColor = color"
+    errorLine2="                           ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="203"
+      column="28"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance.setTextColor can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textAppearance.textColor = color"
+    errorLine2="                           ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="203"
+      column="28"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance.setTextColor can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textAppearance.textColor = color"
+    errorLine2="                                       ~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="203"
+      column="40"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        setTextAppearance(TextAppearance(context, id))"
+    errorLine2="                          ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="209"
+      column="27"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        setTextAppearance(TextAppearance(context, id))"
+    errorLine2="                                         ~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="209"
+      column="42"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        setTextAppearance(TextAppearance(context, id))"
+    errorLine2="                                                  ~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="209"
+      column="51"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance can only be accessed from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="    fun setTextAppearance(textAppearance: TextAppearance?) {"
+    errorLine2="                                          ~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="212"
+      column="43"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.setTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textDrawableHelper.setTextAppearance(textAppearance, context)"
+    errorLine2="                           ~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="213"
+      column="28"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.setTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textDrawableHelper.setTextAppearance(textAppearance, context)"
+    errorLine2="                                             ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="213"
+      column="46"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance can only be accessed from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="    fun getTextAppearance(): TextAppearance? {"
+    errorLine2="                             ~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="216"
+      column="30"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        return textDrawableHelper.textAppearance"
+    errorLine2="                                  ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="217"
+      column="35"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        return textDrawableHelper.textAppearance"
+    errorLine2="                                  ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="217"
+      column="35"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="MaterialShapeDrawable.calculatePathForSize can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        calculatePathForSize(rectF, shapePath)"
+    errorLine2="        ~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="225"
+      column="9"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="MaterialShapeDrawable.drawShape can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        super.drawShape(canvas, paint, shapePath, boundsAsRectF)"
+    errorLine2="              ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="226"
+      column="15"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (textDrawableHelper.textAppearance != null) {"
+    errorLine2="                               ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="234"
+      column="32"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (textDrawableHelper.textAppearance != null) {"
+    errorLine2="                               ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="234"
+      column="32"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textDrawableHelper.textPaint.drawableState = state"
+    errorLine2="                               ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="235"
+      column="32"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textDrawableHelper.textPaint.drawableState = state"
+    errorLine2="                               ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="235"
+      column="32"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.updateTextPaintDrawState can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textDrawableHelper.updateTextPaintDrawState(context)"
+    errorLine2="                               ~~~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="236"
+      column="32"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textDrawableHelper.textPaint.textAlign = align"
+    errorLine2="                           ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="238"
+      column="28"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textDrawableHelper.textPaint.textAlign = align"
+    errorLine2="                           ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="238"
+      column="28"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextWidth can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        val clip = (textDrawableHelper.getTextWidth(text.toString()).roundToInt() > rectF.width().roundToInt())"
+    errorLine2="                                       ~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="240"
+      column="40"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            finalText = TextUtils.ellipsize(text, textDrawableHelper.textPaint, rectF.width(), truncateAt)"
+    errorLine2="                                                                     ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="248"
+      column="70"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            finalText = TextUtils.ellipsize(text, textDrawableHelper.textPaint, rectF.width(), truncateAt)"
+    errorLine2="                                                                     ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="248"
+      column="70"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            finalText, 0, finalText.length, pointF.x, pointF.y, textDrawableHelper.textPaint"
+    errorLine2="                                                                                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="251"
+      column="84"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            finalText, 0, finalText.length, pointF.x, pointF.y, textDrawableHelper.textPaint"
+    errorLine2="                                                                                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="251"
+      column="84"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textDrawableHelper.textPaint.getFontMetrics(fontMetrics)"
+    errorLine2="                           ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="286"
+      column="28"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textDrawableHelper.textPaint.getFontMetrics(fontMetrics)"
+    errorLine2="                           ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeDrawable.kt"
+      line="286"
+      column="28"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="FlowLayout.onLayout can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="    override fun onLayout(sizeChanged: Boolean, left: Int, top: Int, right: Int, bottom: Int) {"
+    errorLine2="                 ~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeChipGroup.kt"
+      line="33"
+      column="18"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="FlowLayout.onLayout can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        super.onLayout(sizeChanged, left, top, right, bottom)"
+    errorLine2="              ~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeChipGroup.kt"
+      line="34"
+      column="15"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="FlowLayout.getRowIndex can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            children.groupBy { getRowIndex(it) }"
+    errorLine2="                               ~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeChipGroup.kt"
+      line="38"
+      column="32"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="FlowLayout.getRowIndex can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            children.groupBy { getRowIndex(it) }"
+    errorLine2="                                           ~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeChipGroup.kt"
+      line="38"
+      column="44"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="FlowLayout.getItemSpacing can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="                x += view.width + itemSpacing"
+    errorLine2="                                  ~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeChipGroup.kt"
+      line="51"
+      column="35"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="FlowLayout.getItemSpacing can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="                x += view.width + itemSpacing"
+    errorLine2="                                  ~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/chip/SomeChipGroup.kt"
+      line="51"
+      column="35"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="ShapeAppearanceModel.isRoundRect can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (shapeAppearance.isRoundRect(outerBounds)) {"
+    errorLine2="                            ~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/ShapeDrawable.kt"
+      line="272"
+      column="29"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="ShapeAppearanceModel.withTransformedCornerSizes can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            innerShapeAppearance = shapeAppearance.withTransformedCornerSizes {"
+    errorLine2="                                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/ShapeDrawable.kt"
+      line="336"
+      column="52"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="AdjustedCornerSize can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="                    AdjustedCornerSize(-strokeWidth / 2, it)"
+    errorLine2="                    ~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/ShapeDrawable.kt"
+      line="340"
+      column="21"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="AdjustedCornerSize can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="                    AdjustedCornerSize(-strokeWidth / 2, it)"
+    errorLine2="                                                         ~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/ShapeDrawable.kt"
+      line="340"
+      column="58"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="ShapeAppearanceModel.isRoundRect can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (shapeAppearanceModel.isRoundRect(bounds)) {"
+    errorLine2="                                 ~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/ShapeDrawable.kt"
+      line="356"
+      column="34"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="    private val textHelper = TextDrawableHelper(this)"
+    errorLine2="                             ~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="32"
+      column="30"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="    private val textHelper = TextDrawableHelper(this)"
+    errorLine2="                                                ~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="32"
+      column="49"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        val textAppearance = TextAppearance(context, textAppearanceRes)"
+    errorLine2="                             ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="41"
+      column="30"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        val textAppearance = TextAppearance(context, textAppearanceRes)"
+    errorLine2="                                            ~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="41"
+      column="45"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        val textAppearance = TextAppearance(context, textAppearanceRes)"
+    errorLine2="                                                     ~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="41"
+      column="54"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.textAlign = Paint.Align.CENTER"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="42"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.textAlign = Paint.Align.CENTER"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="42"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.density = context.resources.displayMetrics.density"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="43"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.density = context.resources.displayMetrics.density"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="43"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.setTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.setTextAppearance(textAppearance, context)"
+    errorLine2="                   ~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="44"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.setTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.setTextAppearance(textAppearance, context)"
+    errorLine2="                                     ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="44"
+      column="38"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.getTextBounds(text, 0, text.length, textRect)"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="45"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.getTextBounds(text, 0, text.length, textRect)"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="45"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.getFontMetrics(fontMetrics)"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="46"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.getFontMetrics(fontMetrics)"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="46"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextWidth can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        return textHelper.getTextWidth(text).roundToInt()"
+    errorLine2="                          ~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="51"
+      column="27"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.alpha = alpha"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="59"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.alpha = alpha"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="59"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.drawableState = state"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="60"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.textPaint.drawableState = state"
+    errorLine2="                   ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="60"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.updateTextPaintDrawState can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        textHelper.updateTextPaintDrawState(context)"
+    errorLine2="                   ~~~~~~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="61"
+      column="20"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textHelper.textPaint"
+    errorLine2="                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="66"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textHelper.textPaint"
+    errorLine2="                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="66"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        return textHelper.textPaint.alpha"
+    errorLine2="                          ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="96"
+      column="27"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        return textHelper.textPaint.alpha"
+    errorLine2="                          ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="96"
+      column="27"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableDelegate.onTextSizeChange can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="    override fun onTextSizeChange() {"
+    errorLine2="                 ~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="103"
+      column="18"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (textHelper.textPaint.colorFilter != colorFilter) {"
+    errorLine2="                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="109"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (textHelper.textPaint.colorFilter != colorFilter) {"
+    errorLine2="                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="109"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textHelper.textPaint.colorFilter = colorFilter"
+    errorLine2="                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="110"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textHelper.textPaint.colorFilter = colorFilter"
+    errorLine2="                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="110"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance.getTextColor can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (textHelper.textAppearance?.textColor != tint) {"
+    errorLine2="                                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="113"
+      column="40"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance.getTextColor can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (textHelper.textAppearance?.textColor != tint) {"
+    errorLine2="                                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="113"
+      column="40"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (textHelper.textAppearance?.textColor != tint) {"
+    errorLine2="                       ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="113"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (textHelper.textAppearance?.textColor != tint) {"
+    errorLine2="                       ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="113"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance.setTextColor can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textHelper.textAppearance?.textColor = tint"
+    errorLine2="                                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="114"
+      column="40"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance.setTextColor can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textHelper.textAppearance?.textColor = tint"
+    errorLine2="                                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="114"
+      column="40"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextAppearance.setTextColor can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textHelper.textAppearance?.textColor = tint"
+    errorLine2="                                                   ~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="114"
+      column="52"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textHelper.textAppearance?.textColor = tint"
+    errorLine2="                       ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="114"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextAppearance can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textHelper.textAppearance?.textColor = tint"
+    errorLine2="                       ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="114"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (textHelper.textPaint.alpha != alpha) {"
+    errorLine2="                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="117"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="        if (textHelper.textPaint.alpha != alpha) {"
+    errorLine2="                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="117"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textHelper.textPaint.alpha = alpha"
+    errorLine2="                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="118"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="RestrictedApi"
+    message="TextDrawableHelper.getTextPaint can only be called from within the same library group (referenced groupId=`com.google.android.material` from groupId=`someProject.core`)"
+    errorLine1="            textHelper.textPaint.alpha = alpha"
+    errorLine2="                       ~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/ui/drawable/TextDrawable.kt"
+      line="118"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="UnsafeOptInUsageError"
+    message="This declaration is opt-in and its usage should be marked with `@com.google.android.material.badge.ExperimentalBadgeUtils` or `@OptIn(markerClass = com.google.android.material.badge.ExperimentalBadgeUtils.class)`"
+    errorLine1="            BadgeUtils.attachBadgeDrawable(settingsBadge, binding.pageToolbar, R.id.page_button_settings)"
+    errorLine2="                       ~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/module/page/ui/toolbar/PageToolbarFragment.kt"
+      line="152"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="UnsafeOptInUsageError"
+    message="This declaration is opt-in and its usage should be marked with `@com.google.android.material.badge.ExperimentalBadgeUtils` or `@OptIn(markerClass = com.google.android.material.badge.ExperimentalBadgeUtils.class)`"
+    errorLine1="            BadgeUtils.detachBadgeDrawable(settingsBadge, binding.pageToolbar, R.id.page_button_settings)"
+    errorLine2="                       ~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/module/page/ui/toolbar/PageToolbarFragment.kt"
+      line="154"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="UnsafeOptInUsageError"
+    message="This declaration is opt-in and its usage should be marked with `@com.google.android.material.badge.ExperimentalBadgeUtils` or `@OptIn(markerClass = com.google.android.material.badge.ExperimentalBadgeUtils.class)`"
+    errorLine1="            BadgeUtils.attachBadgeDrawable(settingsBadge, binding.pageNavbar, R.id.page_button_settings)"
+    errorLine2="                       ~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/module/page/ui/toolbar/redesign/PageToolbarFragmentRedesign.kt"
+      line="163"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="UnsafeOptInUsageError"
+    message="This declaration is opt-in and its usage should be marked with `@com.google.android.material.badge.ExperimentalBadgeUtils` or `@OptIn(markerClass = com.google.android.material.badge.ExperimentalBadgeUtils.class)`"
+    errorLine1="            BadgeUtils.detachBadgeDrawable(settingsBadge, binding.pageNavbar, R.id.page_button_settings)"
+    errorLine2="                       ~~~~~~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/module/page/ui/toolbar/redesign/PageToolbarFragmentRedesign.kt"
+      line="165"
+      column="24"/>
+  </issue>
+
+  <issue
+    id="CoroutineCreationDuringComposition"
+    message="Calls to launch should happen inside a LaunchedEffect and not composition"
+    errorLine1="            showItemInViewportJob = coroutineScope.launch {"
+    errorLine2="                                                   ~~~~~~">
+    <location
+      file="src/main/java/someproject/core/compose/component/chip_area/ChipAreaChoice.kt"
+      line="115"
+      column="52"/>
+  </issue>
+
+  <issue
+    id="CoroutineCreationDuringComposition"
+    message="Calls to launch should happen inside a LaunchedEffect and not composition"
+    errorLine1="        localStateIconAnimationJob = iconAnimationScope.launch {"
+    errorLine2="                                                        ~~~~~~">
+    <location
+      file="src/main/java/someproject/core/compose/component/rating_choice/RatingChoice.kt"
+      line="120"
+      column="57"/>
+  </issue>
+
+  <issue
+    id="UnrememberedMutableState"
+    message="Creating a state object during composition without using `remember`"
+    errorLine1="        val isEndViewChecked = mutableStateOf(false)"
+    errorLine2="                               ~~~~~~~~~~~~~~">
+    <location
+      file="src/main/java/someproject/core/compose/component/cell/preview/CellEndViewPreview.kt"
+      line="43"
+      column="32"/>
+  </issue>
+
+</issues>

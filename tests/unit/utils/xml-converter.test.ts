@@ -1,8 +1,13 @@
 import * as fs from "node:fs";
+import path from "node:path";
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import { XmlConverter } from "@/src/utils/xml-converter";
+
+// Read the actual fixture file content before mocking fs
+const fixtureFilePath = path.resolve(__dirname, "../../fixtures/issues.xml");
+const fixtureContent = fs.readFileSync(fixtureFilePath, "utf8");
 
 // Mock fs module
 vi.mock("fs", async () => {
@@ -143,6 +148,153 @@ describe("XmlConverter", () => {
         "output.xml",
         expect.stringContaining(": "),
       );
+    });
+
+    it("should correctly process the issues.xml test fixture", async () => {
+      // Mock reading the test fixture content with the actual content
+      vi.mocked(fs.promises.readFile).mockResolvedValueOnce(fixtureContent);
+
+      // Call the converter
+      await xmlConverter.convertLintToCheckstyle(
+        "tests/fixtures/issues.xml",
+        "output.xml",
+      );
+
+      // Verify the output contains expected issues
+      // Check for MissingPermission issues
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining(
+          "src/main/java/someproject/feature/location/monitoring/data/android/AndroidLocationManager.kt",
+        ),
+      );
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining(
+          "MissingPermission: Call requires permission which may be rejected by user",
+        ),
+      );
+
+      // Check for UnknownId issues
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining(
+          "src/main/res/layout/player_order_container_done.xml",
+        ),
+      );
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining("UnknownId: The id"),
+      );
+
+      // Check for NewApi issues
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining(
+          "src/main/java/someproject/module/core/troubleshooting/impl/data/repository/FullscreenIntentPermissionRepository.kt",
+        ),
+      );
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining("NewApi: Call requires API level 34"),
+      );
+
+      // Check for DiffUtilEquals issues
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining(
+          "src/main/java/someproject/interclass/common/ui/buttons_dialog/ButtonUiCallback.kt",
+        ),
+      );
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining("DiffUtilEquals: Suspicious equality check"),
+      );
+
+      // Check for RestrictedApi issues
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining(
+          "src/main/java/someproject/core/ui/chip/SomeDrawable.kt",
+        ),
+      );
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining(
+          "RestrictedApi: TextDrawableHelper can only be",
+        ),
+      );
+
+      // Check for UnsafeOptInUsageError issues
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining(
+          "src/main/java/someproject/module/page/ui/toolbar/PageToolbarFragment.kt",
+        ),
+      );
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining(
+          "UnsafeOptInUsageError: This declaration is opt-in",
+        ),
+      );
+
+      // Check for CoroutineCreationDuringComposition issues
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining(
+          "src/main/java/someproject/core/compose/component/chip_area/ChipAreaChoice.kt",
+        ),
+      );
+      expect(fs.promises.writeFile).toHaveBeenCalledWith(
+        "output.xml",
+        expect.stringContaining(
+          "CoroutineCreationDuringComposition: Calls to launch should happen",
+        ),
+      );
+
+      // Verify the total number of files processed
+      // Count unique file paths in the fixture
+      const uniqueFilePaths = new Set([
+        "src/main/java/someproject/feature/location/monitoring/data/android/AndroidLocationManager.kt",
+        "src/main/java/someproject/feature/location/monitoring/data/gms/FusedLocationManager.kt",
+        "src/main/java/someproject/core/map/delegate/GoogleMapDelegate.kt",
+        "src/main/java/someproject/core/map/view/GoogleMapView.kt",
+        "src/main/java/someproject/core/map/delegate/MapLibreMapDelegate.kt",
+        "src/main/java/someproject/legacy/common/utils/TelManager.kt",
+        "src/main/res/layout/player_order_container_done.xml",
+        "src/main/java/someproject/module/core/troubleshooting/impl/data/repository/FullscreenIntentPermissionRepository.kt",
+        "src/main/java/someproject/some/domain/interactor/someFullscreenIntentBannerInteractor.kt",
+        "src/main/java/someproject/interclass/common/ui/buttons_dialog/ButtonUiCallback.kt",
+        "src/main/java/someproject/interclass/common/ui/dialogs/action_dialog/CellUiCallback.kt",
+        "src/main/java/someproject/common/ui/recycler/items/IdentifiableItemUiCallback.kt",
+        "src/main/java/someproject/cargo/client/ui/offer/offers/recycler/OffersAdapter.kt",
+        "src/main/java/someproject/feature/pdf_screen/ui/adapter/PdfAdapter.kt",
+        "src/main/java/someproject/feature/file_storage/feature/pdf/ui/PdfAdapter.kt",
+        "src/main/java/someproject/feature/webview/BaseWebViewClient.kt",
+        "src/main/java/someproject/core/ui/chip/SomeDrawable.kt",
+        "src/main/java/someproject/core/ui/chip/SomeChipGroup.kt",
+        "src/main/java/someproject/core/ui/drawable/ShapeDrawable.kt",
+        "src/main/java/someproject/core/ui/drawable/TextDrawable.kt",
+        "src/main/java/someproject/module/page/ui/toolbar/PageToolbarFragment.kt",
+        "src/main/java/someproject/module/page/ui/toolbar/redesign/PageToolbarFragmentRedesign.kt",
+        "src/main/java/someproject/core/compose/component/chip_area/ChipAreaChoice.kt",
+        "src/main/java/someproject/core/compose/component/rating_choice/RatingChoice.kt",
+        "src/main/java/someproject/core/compose/component/cell/preview/CellEndViewPreview.kt",
+      ]);
+
+      // Verify that the checkstyle XML contains file elements for each unique file path
+      const writeFileCall = vi.mocked(fs.promises.writeFile).mock
+        .calls[0][1] as string;
+      uniqueFilePaths.forEach(filePath => {
+        expect(writeFileCall).toContain(`name="${filePath}"`);
+      });
+
+      // Verify the total number of error elements matches the number of issues in the fixture
+      // The fixture has 100+ issues, so we'll check for at least 100 error elements
+      const errorMatches = writeFileCall.match(/<error /g);
+      expect(errorMatches).not.toBeNull();
+      expect(errorMatches?.length).toBeGreaterThanOrEqual(100);
     });
   });
 });
