@@ -13,6 +13,6 @@ jobs:
         id: github-action-nodejs-template
         uses: ./
         with:
-          name: "Devs"
+          lint_xml_file: tests/fixtures/issues.xml
       - run: |
           echo "Message: ${{ steps.github-action-nodejs-template.outputs.message }}"
