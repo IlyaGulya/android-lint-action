@@ -1,5 +1,5 @@
 name: 'android-lint-action'
-description: 'Runs Android Lint and reports issues using reviewdog'
+description: 'Reports Android Lint issues using reviewdog'
 author: 'Ilya Gulya'
 branding:
   icon: 'check-circle'
