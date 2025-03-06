@@ -1,9 +1,4 @@
-import { setOutput } from "@actions/core";
-
 import { Outputs } from "./outputs";
 
-export class CoreOutputs implements Outputs {
-  save(name: string, value: unknown): void {
-    setOutput(name, value);
-  }
-}
+// eslint-disable-next-line @typescript-eslint/no-extraneous-class
+export class CoreOutputs implements Outputs {}

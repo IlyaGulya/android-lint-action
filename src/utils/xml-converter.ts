@@ -1,5 +1,6 @@
-import * as fs from "node:fs";
-
+import { FileSystem } from "@effect/platform";
+import { PlatformError } from "@effect/platform/Error";
+import { Effect, pipe } from "effect";
 import { XMLParser } from "fast-xml-parser";
 import { create } from "xmlbuilder2";
 
@@ -31,38 +32,28 @@ interface ParsedXml {
   };
 }
 
-export class XmlConverter {
-  private workspacePath: string;
-  private repoName: string;
+// Environment configuration
+export interface XmlConverterConfig {
+  workspacePath: string;
+  repoName: string;
+}
 
-  constructor() {
-    this.workspacePath = process.env.RUNNER_WORKSPACE ?? "";
-    this.repoName = (process.env.GITHUB_REPOSITORY ?? "").split("/")[1] ?? "";
-  }
+// Default environment configuration
+export const getDefaultConfig = (): XmlConverterConfig => ({
+  workspacePath: process.env.RUNNER_WORKSPACE ?? "",
+  repoName: (process.env.GITHUB_REPOSITORY ?? "").split("/")[1] ?? "",
+});
 
-  convertLintToCheckstyle(
-    inputFilePath: string,
-    outputFilePath: string,
-  ): Promise<void> {
-    // Read the input file
-    const xmlData = fs.promises.readFile(inputFilePath, "utf8");
-
-    // Create checkstyle XML
-    const checkstyle = create({ version: "1.0", encoding: "utf8" }).ele(
-      "checkstyle",
-      { version: "8.0" },
-    );
-
-    // If the XML is empty or contains no issues, write empty file and return
-    return xmlData.then(data => {
-      if (data.includes("<issues></issues>")) {
-        return fs.promises.writeFile(
-          outputFilePath,
-          checkstyle.end({ prettyPrint: true }),
-        );
+// Parse XML to issues
+export const parseXmlToIssues = (
+  xmlData: string,
+): Effect.Effect<LintIssue[], Error> =>
+  Effect.try({
+    try: () => {
+      if (xmlData.includes("<issues></issues>")) {
+        return [];
       }
 
-      // Parse the XML
       const parser = new XMLParser({
         ignoreAttributes: false,
         attributeNamePrefix: "@_",
@@ -71,14 +62,11 @@ export class XmlConverter {
         isArray: name => name === "issue",
       });
 
-      const parsedXml = parser.parse(data) as ParsedXml;
+      const parsedXml = parser.parse(xmlData) as ParsedXml;
 
-      // If no issues array exists or it's empty, write empty file and return
+      // If no issues array exists or it's empty, return empty array
       if (!parsedXml.issues.issue) {
-        return fs.promises.writeFile(
-          outputFilePath,
-          checkstyle.end({ prettyPrint: true }),
-        );
+        return [];
       }
 
       // Process each issue
@@ -115,60 +103,88 @@ export class XmlConverter {
         });
       }
 
-      // If no issues after processing, write empty file and return
-      if (issues.length === 0) {
-        return fs.promises.writeFile(
-          outputFilePath,
-          checkstyle.end({ prettyPrint: true }),
-        );
+      return issues;
+    },
+    catch: error => (error instanceof Error ? error : new Error(String(error))),
+  });
+
+// Build checkstyle XML from issues
+export const buildCheckstyleXml = (
+  issues: LintIssue[],
+  config: XmlConverterConfig,
+): Effect.Effect<string> => {
+  return Effect.sync(() => {
+    // Create checkstyle XML
+    const checkstyle = create({ version: "1.0", encoding: "utf8" }).ele(
+      "checkstyle",
+      { version: "8.0" },
+    );
+
+    // If no issues, return empty checkstyle
+    if (issues.length === 0) {
+      return checkstyle.end({ prettyPrint: true });
+    }
+
+    // Build checkstyle XML
+    const processedFiles = new Map<string, unknown>();
+
+    // Process each issue and build the checkstyle XML
+    for (const issue of issues) {
+      // Skip issues without a file path or from .gradle/caches
+      if (
+        !issue.location.file ||
+        issue.location.file.includes(".gradle/caches")
+      ) {
+        continue;
       }
 
-      // Build checkstyle XML
-      const processedFiles = new Map<string, unknown>();
+      // Normalize the file path by removing workspace and repo prefix
+      const filePath = issue.location.file
+        .replace(`${config.workspacePath}/${config.repoName}/`, "")
+        .trim();
 
-      // Process each issue and build the checkstyle XML
-      for (const issue of issues) {
-        // Skip issues without a file path or from .gradle/caches
-        if (
-          !issue.location.file ||
-          issue.location.file.includes(".gradle/caches")
-        ) {
-          continue;
-        }
-
-        // Normalize the file path by removing workspace and repo prefix
-        const filePath = issue.location.file
-          .replace(`${this.workspacePath}/${this.repoName}/`, "")
-          .trim();
-
-        // Skip if the file path is empty after normalization
-        if (!filePath) {
-          continue;
-        }
-
-        let fileElement = processedFiles.get(filePath);
-        if (!fileElement) {
-          fileElement = checkstyle.ele("file", { name: filePath });
-          processedFiles.set(filePath, fileElement);
-        }
-
-        const typedFileElement = fileElement as {
-          ele: (name: string, attrs: Record<string, string>) => void;
-        };
-
-        typedFileElement.ele("error", {
-          line: issue.location.line ?? "0",
-          column: issue.location.column ?? "0",
-          severity: issue.severity,
-          message: `${issue.id}: ${issue.message}`,
-        });
+      // Skip if the file path is empty after normalization
+      if (!filePath) {
+        continue;
       }
 
-      // Write to output file
-      return fs.promises.writeFile(
-        outputFilePath,
-        checkstyle.end({ prettyPrint: true }),
-      );
-    });
-  }
-}
+      let fileElement = processedFiles.get(filePath);
+      if (!fileElement) {
+        fileElement = checkstyle.ele("file", { name: filePath });
+        processedFiles.set(filePath, fileElement);
+      }
+
+      const typedFileElement = fileElement as {
+        ele: (name: string, attrs: Record<string, string>) => void;
+      };
+
+      typedFileElement.ele("error", {
+        line: issue.location.line ?? "0",
+        column: issue.location.column ?? "0",
+        severity: issue.severity,
+        message: `${issue.id}: ${issue.message}`,
+      });
+    }
+
+    return checkstyle.end({ prettyPrint: true });
+  });
+};
+
+export const convertLintToCheckstyle = (
+  inputFilePath: string,
+  outputFilePath: string,
+  config: XmlConverterConfig,
+): Effect.Effect<void, Error | PlatformError, FileSystem.FileSystem> => {
+  return Effect.gen(function* () {
+    const fs = yield* FileSystem.FileSystem;
+
+    yield* pipe(
+      fs.readFileString(inputFilePath),
+      Effect.flatMap(xmlData => parseXmlToIssues(xmlData)),
+      Effect.flatMap(issues => buildCheckstyleXml(issues, config)),
+      Effect.flatMap(checkstyleXml =>
+        fs.writeFileString(outputFilePath, checkstyleXml),
+      ),
+    );
+  });
+};

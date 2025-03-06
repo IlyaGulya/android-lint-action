@@ -1,22 +1,24 @@
 import * as core from "@actions/core";
+import { NodeRuntime } from "@effect/platform-node";
+import * as Cause from "effect/Cause";
+import * as Exit from "effect/Exit";
 
-import { buildAction } from "./build-action";
+import { androidLint } from "@/src/action";
+import { CoreOutputs } from "@/src/outputs/core-outputs";
+
 import { CoreInputs } from "./inputs/core-inputs";
 
-const run = async () => {
-  try {
-    const action = buildAction();
-    const inputs = new CoreInputs();
-    await action.run(inputs);
-  } catch (error: unknown) {
-    if (error instanceof Error || typeof error === "string") {
-      core.setFailed(error);
-    } else {
-      core.setFailed(
-        "Unexpected error happened when running github-action-nodejs-template",
-      );
-    }
-  }
-};
+const outputs = new CoreOutputs();
+const inputs = new CoreInputs();
+const dependencies = { outputs };
 
-void run();
+NodeRuntime.runMain(androidLint(inputs, dependencies), {
+  teardown: function teardown(exit, onExit) {
+    if (Exit.isFailure(exit) && !Cause.isInterruptedOnly(exit.cause)) {
+      core.setFailed(exit.cause.toString());
+      onExit(1);
+    } else {
+      onExit(0);
+    }
+  },
+});

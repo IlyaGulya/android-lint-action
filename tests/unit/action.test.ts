@@ -1,88 +1,96 @@
-import * as fs from "node:fs";
 import * as os from "node:os";
 
-import * as core from "@actions/core";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { FileSystem } from "@effect/platform";
+import { it } from "@effect/vitest";
+import { Effect, Either, Layer, Logger } from "effect";
+import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
-import { Action } from "@/src/action";
+import {
+  ActionOutputs,
+  ActionXmlConverter,
+  runAction,
+  XmlConverterTag,
+} from "@/src/action";
 import { Inputs } from "@/src/inputs/inputs";
-import { ReviewDog } from "@/src/utils/reviewdog";
-import { XmlConverter } from "@/src/utils/xml-converter";
-
-import { LoggerMock } from "./logger/logger-mock";
-import { OutputsMock } from "./outputs/outputs-mock";
-
-// Mock dependencies
-vi.mock("@actions/core");
-vi.mock("fs", async () => {
-  const actual = await vi.importActual("fs");
-  return {
-    ...actual,
-    default: {
-      ...actual,
-      existsSync: vi.fn(),
-      readFileSync: vi.fn(),
-      promises: {
-        readFile: vi.fn(),
-        writeFile: vi.fn(),
-      },
-    },
-    existsSync: vi.fn(),
-    readFileSync: vi.fn(),
-    promises: {
-      readFile: vi.fn(),
-      writeFile: vi.fn(),
-    },
-  };
-});
+import { ActionReviewDog, ReviewDogTag } from "@/src/utils/reviewdog";
 
 describe("Action", () => {
-  let logger: LoggerMock;
-  let outputs: OutputsMock;
-  let action: Action;
   let mockInputs: Inputs;
-  let mockReviewDog: ReviewDog;
-  let mockXmlConverter: XmlConverter;
   let tmpDir: string;
 
+  // Create mock logger functions for tracking calls
+  const mockLogInfo = vi.fn();
+  const mockLogError = vi.fn();
+
+  const testLogger = Logger.make(({ logLevel, message }) => {
+    const actualMessage = Array.isArray(message) ? message.join(" ") : message;
+    if (logLevel.label === "INFO") {
+      // If message is an array, join it or take the first element
+      mockLogInfo(actualMessage);
+    }
+    if (logLevel.label === "ERROR") {
+      mockLogError(actualMessage);
+    }
+  });
+
+  // Create a layer that replaces the default logger
+  const loggerLayer = Logger.replace(Logger.defaultLogger, testLogger);
+
+  // Create test implementations
+  const createTestReviewDog = (installed: boolean): ActionReviewDog => ({
+    ensureInstalled: () =>
+      installed
+        ? Effect.succeedNone
+        : Effect.fail(
+            new Error(
+              "Reviewdog is not installed. Please install it before running this action.",
+            ),
+          ),
+    run: vi.fn().mockImplementation(() => Effect.succeedNone),
+  });
+
+  const createTestXmlConverter = (): ActionXmlConverter => ({
+    convertLintToCheckstyle: vi
+      .fn()
+      .mockImplementation(() => Effect.succeedNone),
+  });
+
+  const createTestFileSystem = (): FileSystem.FileSystem =>
+    ({
+      makeTempDirectoryScoped: () => Effect.succeed(tmpDir),
+    }) as unknown as FileSystem.FileSystem;
+
+  // Create layers for the tests
+  const createTestLayers = (reviewDogInstalled: boolean) => {
+    const outputs = {};
+    const reviewDog = createTestReviewDog(reviewDogInstalled);
+    const xmlConverter = createTestXmlConverter();
+    const fileSystem = createTestFileSystem();
+
+    // Create individual layers
+    const outputsLayer = Layer.succeed(ActionOutputs, outputs);
+    const reviewDogLayer = Layer.succeed(ReviewDogTag, reviewDog);
+    const xmlConverterLayer = Layer.succeed(XmlConverterTag, xmlConverter);
+    const fsLayer = Layer.succeed(FileSystem.FileSystem, fileSystem);
+
+    // Combine all layers, including the logger layer
+    const allLayers = Layer.merge(
+      loggerLayer,
+      Layer.merge(
+        outputsLayer,
+        Layer.merge(reviewDogLayer, Layer.merge(xmlConverterLayer, fsLayer)),
+      ),
+    );
+
+    return { allLayers, outputs, reviewDog, xmlConverter, fileSystem };
+  };
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.resetAllMocks();
 
-    // Reset core mocks
-    vi.mocked(core.setFailed).mockReset();
-
-    // Get the actual temp directory
     tmpDir = os.tmpdir();
-
-    // Mock fs operations
-    vi.mocked(fs.existsSync).mockReturnValue(true);
-    vi.mocked(fs.readFileSync).mockReturnValue(Buffer.from("<lint></lint>"));
-
-    // Create mock objects
-    mockReviewDog = {
-      checkInstalled: vi.fn(),
-      run: vi.fn(),
-    } as unknown as ReviewDog;
-
-    mockXmlConverter = {
-      convertLintToCheckstyle: vi.fn().mockResolvedValue(Promise.resolve()),
-    } as unknown as XmlConverter;
-
-    logger = new LoggerMock();
-    outputs = new OutputsMock();
-
-    // Create action with mocked dependencies
-    action = new Action({
-      logger,
-      outputs,
-      reviewDogFactory: () => mockReviewDog,
-      xmlConverterFactory: () => mockXmlConverter,
-    });
-
-    vi.stubEnv("GITHUB_WORKSPACE", "/workspace");
-
     mockInputs = {
-      github_token: "gh-token",
+      github_token: "fake-token",
       lint_xml_file: "path/to/lint.xml",
       reporter: "github-pr-check",
       level: "warning",
@@ -95,51 +103,60 @@ describe("Action", () => {
   });
 
   describe("When running the action", () => {
-    it("logs beginning of execution", async () => {
-      // Mock reviewdog as installed
-      mockReviewDog.checkInstalled = vi.fn().mockResolvedValueOnce(true);
+    it.effect("logs beginning of execution", () =>
+      Effect.gen(function* () {
+        // Setup test environment with reviewdog installed
+        const { allLayers } = createTestLayers(true);
 
-      // Execute action
-      await action.run(mockInputs);
+        // Run the action with all dependencies
+        yield* Effect.provide(runAction(mockInputs), allLayers);
 
-      // Verify the first log message using the public method
-      logger.assertInfoToHaveBeenCalledWith("Running android-lint-action");
-    });
+        // Verify the first log message
+        expect(mockLogInfo).toHaveBeenCalledWith(
+          expect.stringContaining("Running android-lint-action"),
+        );
+      }),
+    );
 
-    it("fails when reviewdog is not installed", async () => {
-      // Mock reviewdog as not installed
-      mockReviewDog.checkInstalled = vi.fn().mockResolvedValueOnce(false);
+    it.effect("fails when reviewdog is not installed", () =>
+      Effect.gen(function* () {
+        // Setup test environment with reviewdog NOT installed
+        const { allLayers } = createTestLayers(false);
 
-      // Execute action
-      await action.run(mockInputs);
+        // Run the action and capture the result
+        const result = yield* Effect.either(
+          Effect.provide(runAction(mockInputs), allLayers),
+        );
 
-      // Verify that error message was logged and the action failed
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining("Reviewdog is not installed"),
-      );
-      expect(core.setFailed).toHaveBeenCalledWith(
-        expect.stringContaining("Reviewdog is not installed"),
-      );
+        // Verify we got an error
+        expect(Either.isLeft(result)).toBe(true);
 
-      // Verify that reviewdog.run was not called
-      expect(mockReviewDog.run).not.toHaveBeenCalled();
-    });
+        // Extract the error and check its message
+        if (Either.isLeft(result)) {
+          const error = result.left;
+          expect(error).toBeDefined();
+          expect(error.message).toContain("Reviewdog is not installed");
+        }
+      }),
+    );
 
-    it("runs reviewdog when it is installed", async () => {
-      // Mock reviewdog as installed
-      mockReviewDog.checkInstalled = vi.fn().mockResolvedValueOnce(true);
+    it.effect("runs reviewdog when it is installed", () =>
+      Effect.gen(function* () {
+        // Setup test environment with reviewdog installed
+        const { allLayers, reviewDog } = createTestLayers(true);
 
-      // Execute action
-      await action.run(mockInputs);
+        // Run the action
+        yield* Effect.provide(runAction(mockInputs), allLayers);
 
-      // Verify that reviewdog was run
-      expect(mockReviewDog.run).toHaveBeenCalledWith(
-        `${tmpDir}/output_checkstyle.xml`,
-        "Android Lint",
-        mockInputs.reporter,
-        mockInputs.level,
-        mockInputs.reviewdog_flags,
-      );
-    });
+        // Verify reviewdog was executed with expected params
+        expect(reviewDog.run).toHaveBeenCalledWith(
+          expect.stringContaining("output_checkstyle.xml"),
+          "Android Lint",
+          "github-pr-check",
+          "warning",
+          "--diff",
+        );
+      }),
+    );
   });
 });

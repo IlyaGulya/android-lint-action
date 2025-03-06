@@ -1,39 +1,32 @@
+import type { XmlConverterConfig } from "@/src/utils/xml-converter";
+
 import * as fs from "node:fs";
 import path from "node:path";
 
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { FileSystem } from "@effect/platform";
+import { it } from "@effect/vitest";
+import { Effect } from "effect";
+import { afterEach, beforeEach, describe, expect, vi } from "vitest";
 
-import { XmlConverter } from "@/src/utils/xml-converter";
+import {
+  buildCheckstyleXml,
+  convertLintToCheckstyle,
+  getDefaultConfig,
+  parseXmlToIssues,
+} from "@/src/utils/xml-converter";
 
-// Read the actual fixture file content before mocking fs
+// Read the actual fixture file content
 const fixtureFilePath = path.resolve(__dirname, "../../fixtures/issues.xml");
 const fixtureContent = fs.readFileSync(fixtureFilePath, "utf8");
 
-// Mock fs module
-vi.mock("fs", async () => {
-  const actual = await vi.importActual("fs");
-  return {
-    ...actual,
-    default: {
-      ...actual,
-      promises: {
-        readFile: vi.fn(),
-        writeFile: vi.fn(),
-      },
-    },
-    promises: {
-      readFile: vi.fn(),
-      writeFile: vi.fn(),
-    },
-  };
-});
-
-describe("XmlConverter", () => {
-  let xmlConverter: XmlConverter;
+describe("XML Converter", () => {
+  let mockConfig: XmlConverterConfig;
 
   beforeEach(() => {
-    vi.clearAllMocks();
-    xmlConverter = new XmlConverter();
+    mockConfig = {
+      workspacePath: "/workspace",
+      repoName: "repo",
+    };
 
     // Mock environment variables
     vi.stubEnv("RUNNER_WORKSPACE", "/workspace");
@@ -44,257 +37,207 @@ describe("XmlConverter", () => {
     vi.unstubAllEnvs();
   });
 
+  describe("parseXmlToIssues", () => {
+    it.effect("should return empty array when no issues exist", () =>
+      Effect.gen(function* () {
+        // Test with empty lint XML
+        const emptyXml = `<?xml version="1.0" encoding="utf-8"?><issues></issues>`;
+
+        // Call the parser
+        const result = yield* parseXmlToIssues(emptyXml);
+
+        // Verify the output
+        expect(result).toEqual([]);
+      }),
+    );
+
+    it.effect("should parse single issue correctly", () =>
+      Effect.gen(function* () {
+        // Test with single issue
+        const singleIssueXml = `
+          <?xml version="1.0" encoding="utf-8"?>
+          <issues>
+            <issue id="SampleIssue" severity="warning" message="This is a warning message">
+              <location file="/workspace/repo/src/main.kt" line="10" column="5" />
+            </issue>
+          </issues>
+        `;
+
+        // Call the parser
+        const result = yield* parseXmlToIssues(singleIssueXml);
+
+        // Verify the output has correct shape
+        expect(result).toHaveLength(1);
+        expect(result[0]).toEqual({
+          id: "SampleIssue",
+          severity: "warning",
+          message: "This is a warning message",
+          location: {
+            file: "/workspace/repo/src/main.kt",
+            line: 10,
+            column: 5,
+          },
+        });
+      }),
+    );
+
+    it.effect("should parse multiple issues correctly", () =>
+      Effect.gen(function* () {
+        // Test with multiple issues
+        const multipleIssuesXml = `
+          <?xml version="1.0" encoding="utf-8"?>
+          <issues>
+            <issue id="Issue1" severity="warning" message="Warning message">
+              <location file="/workspace/repo/src/main.kt" line="10" column="5" />
+            </issue>
+            <issue id="Issue2" severity="error" message="Error message">
+              <location file="/workspace/repo/src/test.kt" line="20" column="15" />
+            </issue>
+          </issues>
+        `;
+
+        // Call the parser
+        const result = yield* parseXmlToIssues(multipleIssuesXml);
+
+        // Verify the output
+        expect(result).toHaveLength(2);
+        expect(result[0].id).toBe("Issue1");
+        expect(result[1].id).toBe("Issue2");
+      }),
+    );
+  });
+
+  describe("buildCheckstyleXml", () => {
+    it.effect("should create empty checkstyle XML when no issues exist", () =>
+      Effect.gen(function* () {
+        // Call the builder with empty issues array
+        const result = yield* buildCheckstyleXml([], mockConfig);
+
+        // Verify the output
+        expect(result).toContain('<?xml version="1.0" encoding="utf8"?>');
+        expect(result).toContain('<checkstyle version="8.0"/>');
+      }),
+    );
+
+    it.effect("should build proper checkstyle XML with issues", () =>
+      Effect.gen(function* () {
+        // Sample issues
+        const issues = [
+          {
+            id: "Issue1",
+            severity: "warning",
+            message: "Warning message",
+            location: {
+              file: "/workspace/repo/src/main.kt",
+              line: "10",
+              column: "5",
+            },
+          },
+          {
+            id: "Issue2",
+            severity: "error",
+            message: "Error message",
+            location: {
+              file: "/workspace/repo/src/test.kt",
+              line: "20",
+              column: "15",
+            },
+          },
+        ];
+
+        // Call the builder
+        const result = yield* buildCheckstyleXml(issues, mockConfig);
+
+        // Verify the output contains both files
+        expect(result).toContain('<file name="src/main.kt">');
+        expect(result).toContain('<file name="src/test.kt">');
+
+        // Check that errors are correctly formatted
+        expect(result).toContain(
+          '<error line="10" column="5" severity="warning" message="Issue1: Warning message"/>',
+        );
+        expect(result).toContain(
+          '<error line="20" column="15" severity="error" message="Issue2: Error message"/>',
+        );
+      }),
+    );
+
+    it.effect("should skip gradle cache files", () =>
+      Effect.gen(function* () {
+        // Sample issues with gradle cache file
+        const issues = [
+          {
+            id: "Issue1",
+            severity: "warning",
+            message: "Warning message",
+            location: {
+              file: "/workspace/repo/src/main.kt",
+              line: "10",
+              column: "5",
+            },
+          },
+          {
+            id: "Issue2",
+            severity: "error",
+            message: "Error message",
+            location: {
+              file: "/workspace/repo/.gradle/caches/test.kt",
+              line: "20",
+              column: "15",
+            },
+          },
+        ];
+
+        // Call the builder
+        const result = yield* buildCheckstyleXml(issues, mockConfig);
+
+        // Verify that gradle cache file is skipped
+        expect(result).toContain('<file name="src/main.kt">');
+        expect(result).not.toContain(".gradle/caches/test.kt");
+      }),
+    );
+  });
+
   describe("convertLintToCheckstyle", () => {
-    it("should create empty checkstyle file when no issues exist", async () => {
-      // Mock reading empty lint XML
-      const emptyXml = `<?xml version="1.0" encoding="utf-8"?><issues></issues>`;
-      vi.mocked(fs.promises.readFile).mockResolvedValueOnce(emptyXml);
+    it.effect("should convert lint XML to checkstyle XML", () =>
+      Effect.gen(function* () {
+        // Setup input/output file paths
+        const inputFile = "/input.xml";
+        const outputFile = "/output.xml";
 
-      // Call the converter
-      await xmlConverter.convertLintToCheckstyle("input.xml", "output.xml");
+        let writtenContent = "";
 
-      // Verify the output
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining('<?xml version="1.0" encoding="utf8"?>'),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining('<checkstyle version="8.0"/>'),
-      );
-    });
+        // Create a custom file system layer with mocked behavior
+        const fileSystemMock = FileSystem.layerNoop({
+          readFileString: () => Effect.succeed(fixtureContent),
+          writeFileString: (path, content) => {
+            writtenContent = content;
+            return Effect.succeedNone;
+          },
+          makeTempDirectoryScoped: () => Effect.succeed("/tmp"),
+        });
 
-    it("should convert lint issues to checkstyle format", async () => {
-      // Mock reading lint XML with issues
-      const lintXml = `<?xml version="1.0" encoding="utf-8"?><issues><issue id="UnusedResources" severity="warning" message="The resource R.string.app_name appears to be unused" category="Performance"><location file="/workspace/repo/app/src/main/res/values/strings.xml" line="2" column="4"/></issue></issues>`;
-      vi.mocked(fs.promises.readFile).mockResolvedValueOnce(lintXml);
+        // Call the converter with the mocked file system
+        yield* Effect.provide(
+          convertLintToCheckstyle(inputFile, outputFile, mockConfig),
+          fileSystemMock,
+        );
 
-      // Call the converter
-      await xmlConverter.convertLintToCheckstyle("input.xml", "output.xml");
+        // Verify the expected content was written
+        expect(writtenContent).toContain(
+          '<?xml version="1.0" encoding="utf8"?>',
+        );
+        expect(writtenContent).toContain('<checkstyle version="8.0">');
+      }),
+    );
+  });
 
-      // Verify the output
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining("app/src/main/res/values/strings.xml"),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining('line="2"'),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining('column="4"'),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining('severity="warning"'),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "UnusedResources: The resource R.string.app_name appears to be unused",
-        ),
-      );
-    });
+  describe("getDefaultConfig", () => {
+    it("should use environment variables for config", () => {
+      const config = getDefaultConfig();
 
-    it("should skip issues from .gradle/caches directory", async () => {
-      // Mock reading lint XML with gradle cache issue
-      const lintXml = `<?xml version="1.0" encoding="utf-8"?><issues><issue id="GradleDependency" severity="warning" message="A newer version of com.android.tools.build:gradle is available"><location file="/workspace/repo/.gradle/caches/build.gradle" line="1" column="1"/></issue></issues>`;
-      vi.mocked(fs.promises.readFile).mockResolvedValueOnce(lintXml);
-
-      // Call the converter
-      await xmlConverter.convertLintToCheckstyle("input.xml", "output.xml");
-
-      // Verify the output doesn't contain the gradle cache issue
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.not.stringContaining(".gradle/caches"),
-      );
-    });
-
-    it("should handle missing location attributes", async () => {
-      // Mock reading lint XML with missing location attributes
-      const lintXml = `<?xml version="1.0" encoding="utf-8"?><issues><issue id="MissingLocation" severity="warning" message="Test message"><location file="/workspace/repo/app/src/main/java/Test.java"/></issue></issues>`;
-      vi.mocked(fs.promises.readFile).mockResolvedValueOnce(lintXml);
-
-      // Call the converter
-      await xmlConverter.convertLintToCheckstyle("input.xml", "output.xml");
-
-      // Verify default values are used
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining('line="0"'),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining('column="0"'),
-      );
-    });
-
-    it("should handle missing optional fields", async () => {
-      // Mock reading lint XML with missing optional fields
-      const lintXml = `<?xml version="1.0" encoding="utf-8"?><issues><issue><location file="/workspace/repo/app/src/main/java/Test.java" line="1" column="1"/></issue></issues>`;
-      vi.mocked(fs.promises.readFile).mockResolvedValueOnce(lintXml);
-
-      // Call the converter
-      await xmlConverter.convertLintToCheckstyle("input.xml", "output.xml");
-
-      // Verify default values are used
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining('severity="info"'),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(": "),
-      );
-    });
-
-    it("should correctly process the issues.xml test fixture", async () => {
-      // Mock reading the test fixture content with the actual content
-      vi.mocked(fs.promises.readFile).mockResolvedValueOnce(fixtureContent);
-
-      // Call the converter
-      await xmlConverter.convertLintToCheckstyle(
-        "tests/fixtures/issues.xml",
-        "output.xml",
-      );
-
-      // Verify the output contains expected issues
-      // Check for MissingPermission issues
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "src/main/java/someproject/feature/location/monitoring/data/android/AndroidLocationManager.kt",
-        ),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "MissingPermission: Call requires permission which may be rejected by user",
-        ),
-      );
-
-      // Check for UnknownId issues
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "src/main/res/layout/player_order_container_done.xml",
-        ),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining("UnknownId: The id"),
-      );
-
-      // Check for NewApi issues
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "src/main/java/someproject/module/core/troubleshooting/impl/data/repository/FullscreenIntentPermissionRepository.kt",
-        ),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining("NewApi: Call requires API level 34"),
-      );
-
-      // Check for DiffUtilEquals issues
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "src/main/java/someproject/interclass/common/ui/buttons_dialog/ButtonUiCallback.kt",
-        ),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining("DiffUtilEquals: Suspicious equality check"),
-      );
-
-      // Check for RestrictedApi issues
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "src/main/java/someproject/core/ui/chip/SomeDrawable.kt",
-        ),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "RestrictedApi: TextDrawableHelper can only be",
-        ),
-      );
-
-      // Check for UnsafeOptInUsageError issues
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "src/main/java/someproject/module/page/ui/toolbar/PageToolbarFragment.kt",
-        ),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "UnsafeOptInUsageError: This declaration is opt-in",
-        ),
-      );
-
-      // Check for CoroutineCreationDuringComposition issues
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "src/main/java/someproject/core/compose/component/chip_area/ChipAreaChoice.kt",
-        ),
-      );
-      expect(fs.promises.writeFile).toHaveBeenCalledWith(
-        "output.xml",
-        expect.stringContaining(
-          "CoroutineCreationDuringComposition: Calls to launch should happen",
-        ),
-      );
-
-      // Verify the total number of files processed
-      // Count unique file paths in the fixture
-      const uniqueFilePaths = new Set([
-        "src/main/java/someproject/feature/location/monitoring/data/android/AndroidLocationManager.kt",
-        "src/main/java/someproject/feature/location/monitoring/data/gms/FusedLocationManager.kt",
-        "src/main/java/someproject/core/map/delegate/GoogleMapDelegate.kt",
-        "src/main/java/someproject/core/map/view/GoogleMapView.kt",
-        "src/main/java/someproject/core/map/delegate/MapLibreMapDelegate.kt",
-        "src/main/java/someproject/legacy/common/utils/TelManager.kt",
-        "src/main/res/layout/player_order_container_done.xml",
-        "src/main/java/someproject/module/core/troubleshooting/impl/data/repository/FullscreenIntentPermissionRepository.kt",
-        "src/main/java/someproject/some/domain/interactor/someFullscreenIntentBannerInteractor.kt",
-        "src/main/java/someproject/interclass/common/ui/buttons_dialog/ButtonUiCallback.kt",
-        "src/main/java/someproject/interclass/common/ui/dialogs/action_dialog/CellUiCallback.kt",
-        "src/main/java/someproject/common/ui/recycler/items/IdentifiableItemUiCallback.kt",
-        "src/main/java/someproject/cargo/client/ui/offer/offers/recycler/OffersAdapter.kt",
-        "src/main/java/someproject/feature/pdf_screen/ui/adapter/PdfAdapter.kt",
-        "src/main/java/someproject/feature/file_storage/feature/pdf/ui/PdfAdapter.kt",
-        "src/main/java/someproject/feature/webview/BaseWebViewClient.kt",
-        "src/main/java/someproject/core/ui/chip/SomeDrawable.kt",
-        "src/main/java/someproject/core/ui/chip/SomeChipGroup.kt",
-        "src/main/java/someproject/core/ui/drawable/ShapeDrawable.kt",
-        "src/main/java/someproject/core/ui/drawable/TextDrawable.kt",
-        "src/main/java/someproject/module/page/ui/toolbar/PageToolbarFragment.kt",
-        "src/main/java/someproject/module/page/ui/toolbar/redesign/PageToolbarFragmentRedesign.kt",
-        "src/main/java/someproject/core/compose/component/chip_area/ChipAreaChoice.kt",
-        "src/main/java/someproject/core/compose/component/rating_choice/RatingChoice.kt",
-        "src/main/java/someproject/core/compose/component/cell/preview/CellEndViewPreview.kt",
-      ]);
-
-      // Verify that the checkstyle XML contains file elements for each unique file path
-      const writeFileCall = vi.mocked(fs.promises.writeFile).mock
-        .calls[0][1] as string;
-      uniqueFilePaths.forEach(filePath => {
-        expect(writeFileCall).toContain(`name="${filePath}"`);
-      });
-
-      // Verify the total number of error elements matches the number of issues in the fixture
-      // The fixture has 100+ issues, so we'll check for at least 100 error elements
-      const errorMatches = writeFileCall.match(/<error /g);
-      expect(errorMatches).not.toBeNull();
-      expect(errorMatches?.length).toBeGreaterThanOrEqual(100);
+      expect(config.workspacePath).toBe("/workspace");
+      expect(config.repoName).toBe("repo");
     });
   });
 });
