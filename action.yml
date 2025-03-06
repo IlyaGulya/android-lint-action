@@ -9,7 +9,7 @@ inputs:
   github_token:
     description: 'GITHUB_TOKEN to use for reviewdog'
     required: false
-    default: {{ github.token }}
+    default: ${{ github.token }}
   lint_xml_file:
     description: 'Path to the Android Lint XML result file'
     required: true
