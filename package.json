@@ -84,7 +84,7 @@
     "@effect/platform": "^0.77.6",
     "@effect/platform-node": "^0.73.6",
     "@vitest/coverage-v8": "^3.0.7",
-    "effect": "^3.13.6",
+    "effect": "^3.13.7",
     "fast-xml-parser": "^4.5.3",
     "xmlbuilder2": "^3.1.1"
   }
