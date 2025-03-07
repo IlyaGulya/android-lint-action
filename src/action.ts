@@ -1,42 +1,22 @@
 import path from "node:path";
 
-import { FileSystem } from "@effect/platform";
-import { PlatformError } from "@effect/platform/Error";
-import { Context, Effect, pipe } from "effect";
+import { FileSystem } from "@effect/platform/FileSystem";
+import { Context, Effect } from "effect";
+
+import { XmlConverter } from "@/src/xml-converter";
 
 import { Inputs } from "./inputs/inputs";
 import { Outputs } from "./outputs/outputs";
-import * as reviewdog from "./utils/reviewdog";
-import { ActionReviewDog, ReviewDogTag } from "./utils/reviewdog";
-import {
-  convertLintToCheckstyle,
-  getDefaultConfig,
-} from "./utils/xml-converter";
+import { ReviewDog } from "./reviewdog";
 
 export type ActionOutputs = Outputs;
 export const ActionOutputs = Context.GenericTag<ActionOutputs>("ActionOutputs");
 
-export interface ActionXmlConverter {
-  convertLintToCheckstyle: (
-    inputFilePath: string,
-    outputFilePath: string,
-  ) => Effect.Effect<void, Error | PlatformError, FileSystem.FileSystem>;
-}
-
-export const XmlConverterTag =
-  Context.GenericTag<ActionXmlConverter>("ActionXmlConverter");
-
-export function runAction(
-  inputs: Inputs,
-): Effect.Effect<
-  void,
-  Error | PlatformError,
-  ActionOutputs | ActionReviewDog | ActionXmlConverter | FileSystem.FileSystem
-> {
+export function runAction(inputs: Inputs) {
   return Effect.gen(function* () {
-    const reviewDog = yield* ReviewDogTag;
-    const xmlConverter = yield* XmlConverterTag;
-    const fs = yield* FileSystem.FileSystem;
+    const reviewDog = yield* ReviewDog.ReviewDog;
+    const xmlConverter = yield* XmlConverter.XmlConverter;
+    const fs = yield* FileSystem;
 
     yield* Effect.logInfo("Running android-lint-action");
 
@@ -80,32 +60,4 @@ export function runAction(
 
     yield* Effect.logInfo("Finished android-lint-action");
   });
-}
-
-// Run the Android Lint Action with the given inputs and dependencies
-export function androidLint(
-  inputs: Inputs,
-  dependencies: {
-    outputs: Outputs;
-  },
-) {
-  const { outputs } = dependencies;
-
-  // Directly provide services to the effect
-  return pipe(
-    runAction(inputs),
-    Effect.provideService(ActionOutputs, outputs),
-    Effect.provideService(ReviewDogTag, reviewdog.ReviewDogImplementation),
-    Effect.provideService(XmlConverterTag, {
-      convertLintToCheckstyle: (
-        inputFilePath: string,
-        outputFilePath: string,
-      ) =>
-        convertLintToCheckstyle(
-          inputFilePath,
-          outputFilePath,
-          getDefaultConfig(),
-        ),
-    }),
-  );
 }

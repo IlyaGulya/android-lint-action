@@ -2,6 +2,7 @@ name: '🧐 github-action-nodejs-template'
 
 on:
   push:
+  workflow_dispatch:
 
 jobs:
   github-action-nodejs-template:

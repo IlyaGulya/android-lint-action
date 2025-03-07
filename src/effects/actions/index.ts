@@ -1,1 +1,1 @@
-export { ActionsIOService, IOService } from "./io";
+export * as IOService from "./io";

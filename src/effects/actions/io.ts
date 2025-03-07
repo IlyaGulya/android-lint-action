@@ -1,5 +1,5 @@
 import * as actionsIo from "@actions/io";
-import { Effect } from "effect";
+import { Context, Effect, Layer } from "effect";
 
 /**
  * Interface for IO operations
@@ -18,8 +18,25 @@ export interface IOService {
 /**
  * Implementation of IOService using @actions/io
  */
-export const ActionsIOService: IOService = {
+const impl: IOService = {
   which(tool: string, check?: boolean): Effect.Effect<string, Error> {
     return Effect.tryPromise(() => actionsIo.which(tool, check));
   },
 };
+
+export const IOService = Context.GenericTag<IOService>("IOService");
+
+export const layer: Layer.Layer<IOService> = Layer.succeed(IOService, impl);
+
+export function makeNoop(impl: Partial<IOService>): IOService {
+  return {
+    which: () => Effect.fail(new Error("not implemented")),
+    ...impl,
+  };
+}
+
+export function layerNoop(
+  impl: Partial<IOService> = {},
+): Layer.Layer<IOService> {
+  return Layer.succeed(IOService, makeNoop(impl));
+}

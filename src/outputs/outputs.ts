@@ -1,1 +1,3 @@
-export type Outputs = object;
+export interface Outputs {
+  none: string;
+}

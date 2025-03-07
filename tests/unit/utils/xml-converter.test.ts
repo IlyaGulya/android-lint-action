@@ -1,4 +1,4 @@
-import type { XmlConverterConfig } from "@/src/utils/xml-converter";
+import type { XmlConverterConfig } from "@/src/xml-converter/xml-converter";
 
 import * as fs from "node:fs";
 import path from "node:path";
@@ -13,7 +13,7 @@ import {
   convertLintToCheckstyle,
   getDefaultConfig,
   parseXmlToIssues,
-} from "@/src/utils/xml-converter";
+} from "@/src/xml-converter/xml-converter";
 
 // Read the actual fixture file content
 const fixtureFilePath = path.resolve(__dirname, "../../fixtures/issues.xml");
@@ -219,7 +219,7 @@ describe("XML Converter", () => {
 
         // Call the converter with the mocked file system
         yield* Effect.provide(
-          convertLintToCheckstyle(inputFile, outputFile, mockConfig),
+          convertLintToCheckstyle(inputFile, outputFile),
           fileSystemMock,
         );
 

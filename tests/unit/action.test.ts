@@ -1,19 +1,22 @@
 import * as os from "node:os";
 
 import { FileSystem } from "@effect/platform";
-import { it } from "@effect/vitest";
-import { Effect, Either, Layer, Logger } from "effect";
-import { afterEach, beforeEach, describe, expect, vi } from "vitest";
-
+import { NodeCommandExecutor } from "@effect/platform-node";
 import {
-  ActionOutputs,
-  ActionXmlConverter,
-  runAction,
-  XmlConverterTag,
-} from "@/src/action";
-import { Inputs } from "@/src/inputs/inputs";
-import { ActionReviewDog, ReviewDogTag } from "@/src/utils/reviewdog";
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  it,
+  vi,
+} from "@effect/vitest";
+import { Effect, Either, Layer, Logger } from "effect";
 
+import { ActionOutputs, runAction } from "@/src/action";
+import { IOService } from "@/src/effects/actions";
+import { Inputs } from "@/src/inputs/inputs";
+import { ReviewDog } from "@/src/reviewdog";
+import { XmlConverter } from "@/src/xml-converter";
 describe("Action", () => {
   let mockInputs: Inputs;
   let tmpDir: string;
@@ -36,53 +39,44 @@ describe("Action", () => {
   // Create a layer that replaces the default logger
   const loggerLayer = Logger.replace(Logger.defaultLogger, testLogger);
 
-  // Create test implementations
-  const createTestReviewDog = (installed: boolean): ActionReviewDog => ({
-    ensureInstalled: () =>
-      installed
-        ? Effect.succeedNone
-        : Effect.fail(
-            new Error(
-              "Reviewdog is not installed. Please install it before running this action.",
-            ),
-          ),
-    run: vi.fn().mockImplementation(() => Effect.succeedNone),
-  });
-
-  const createTestXmlConverter = (): ActionXmlConverter => ({
-    convertLintToCheckstyle: vi
-      .fn()
-      .mockImplementation(() => Effect.succeedNone),
-  });
-
-  const createTestFileSystem = (): FileSystem.FileSystem =>
-    ({
-      makeTempDirectoryScoped: () => Effect.succeed(tmpDir),
-    }) as unknown as FileSystem.FileSystem;
-
   // Create layers for the tests
   const createTestLayers = (reviewDogInstalled: boolean) => {
-    const outputs = {};
-    const reviewDog = createTestReviewDog(reviewDogInstalled);
-    const xmlConverter = createTestXmlConverter();
-    const fileSystem = createTestFileSystem();
+    const outputs = {
+      none: "none",
+    };
+    const reviewDog = ReviewDog.makeNoop({
+      ensureInstalled: () =>
+        reviewDogInstalled
+          ? Effect.succeedNone
+          : Effect.fail(
+              new Error(
+                "Reviewdog is not installed. Please install it before running this action.",
+              ),
+            ),
+      run: vi.fn(() => Effect.succeedNone),
+    });
+    const xmlConverterLayer = XmlConverter.layerNoop({
+      convertLintToCheckstyle: () => Effect.succeedNone,
+    });
 
     // Create individual layers
     const outputsLayer = Layer.succeed(ActionOutputs, outputs);
-    const reviewDogLayer = Layer.succeed(ReviewDogTag, reviewDog);
-    const xmlConverterLayer = Layer.succeed(XmlConverterTag, xmlConverter);
-    const fsLayer = Layer.succeed(FileSystem.FileSystem, fileSystem);
+    const fsLayer = FileSystem.layerNoop({
+      makeTempDirectoryScoped: () => Effect.succeed(tmpDir),
+    });
+    const commandExecutor = Layer.provide(NodeCommandExecutor.layer, fsLayer);
 
-    // Combine all layers, including the logger layer
-    const allLayers = Layer.merge(
+    const allLayers = Layer.mergeAll(
       loggerLayer,
-      Layer.merge(
-        outputsLayer,
-        Layer.merge(reviewDogLayer, Layer.merge(xmlConverterLayer, fsLayer)),
-      ),
+      outputsLayer,
+      Layer.succeed(ReviewDog.ReviewDog, reviewDog),
+      xmlConverterLayer,
+      commandExecutor,
+      fsLayer,
+      IOService.layer,
     );
 
-    return { allLayers, outputs, reviewDog, xmlConverter, fileSystem };
+    return { allLayers, reviewDog };
   };
 
   beforeEach(() => {
@@ -103,7 +97,7 @@ describe("Action", () => {
   });
 
   describe("When running the action", () => {
-    it.effect("logs beginning of execution", () =>
+    it.scoped("logs beginning of execution", () =>
       Effect.gen(function* () {
         // Setup test environment with reviewdog installed
         const { allLayers } = createTestLayers(true);
@@ -118,7 +112,7 @@ describe("Action", () => {
       }),
     );
 
-    it.effect("fails when reviewdog is not installed", () =>
+    it.scoped("fails when reviewdog is not installed", () =>
       Effect.gen(function* () {
         // Setup test environment with reviewdog NOT installed
         const { allLayers } = createTestLayers(false);
@@ -140,7 +134,7 @@ describe("Action", () => {
       }),
     );
 
-    it.effect("runs reviewdog when it is installed", () =>
+    it.scoped("runs reviewdog when it is installed", () =>
       Effect.gen(function* () {
         // Setup test environment with reviewdog installed
         const { allLayers, reviewDog } = createTestLayers(true);

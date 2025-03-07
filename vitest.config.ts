@@ -8,7 +8,7 @@ export default defineConfig({
     globals: true,
     isolate: false,
     passWithNoTests: true,
-    include: ["tests/unit/**/*.test.ts"],
+    include: ["tests/unit/**/*.test.ts", "tests/integration/**/*.test.ts"],
     env: loadEnv("test", process.cwd(), ""),
     coverage: {
       reporter: ["text", "json", "html"],
