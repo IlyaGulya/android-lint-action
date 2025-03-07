@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.12.0](https://github.com/IlyaGulya/android-lint-action/compare/v0.11.2...v0.12.0) (2025-03-07)
+
+
+### ✨ New Features
+
+* action draft implemented ([5fdaa75](https://github.com/IlyaGulya/android-lint-action/commit/5fdaa758aa6f718ca40f04f247d45651d5895feb))
+* add integration test, refactor modules ([4131116](https://github.com/IlyaGulya/android-lint-action/commit/4131116f593b5904973c3419e2ede19b95a9b438))
+* rewrite in effect ([88dfb91](https://github.com/IlyaGulya/android-lint-action/commit/88dfb91081e9e3b2cbd7ab41e1c9269c9039fbd5))
+* use fixture for test ([f3b6a46](https://github.com/IlyaGulya/android-lint-action/commit/f3b6a4654b970b7520991d5ced4fa5f9dd5505b1))
+
 ## [0.11.2](https://github.com/AlbertHernandez/github-action-nodejs-template/compare/v0.11.1...v0.11.2) (2024-11-03)
 
 
