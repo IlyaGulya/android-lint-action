@@ -1,6 +1,6 @@
 import { Command, CommandExecutor, FileSystem } from "@effect/platform";
 import { PlatformError } from "@effect/platform/Error";
-import { Context, Effect, Layer, Stream } from "effect";
+import { Context, Effect, Layer, Scope, Stream } from "effect";
 
 import { IOService } from "../effects/actions";
 
@@ -19,7 +19,7 @@ export interface ReviewDog {
   ): Effect.Effect<
     void,
     Error | PlatformError,
-    CommandExecutor.CommandExecutor | FileSystem.FileSystem
+    CommandExecutor.CommandExecutor | FileSystem.FileSystem | Scope.Scope
   >;
 }
 
@@ -91,14 +91,17 @@ const run = (
       Command.stderr("inherit"),
     );
 
-    yield* Effect.scoped(
-      Effect.gen(function* () {
-        const process = yield* executor.start(command);
-        const fileStream = fs.stream(checkstyleFile);
-        yield* Stream.run(fileStream, process.stdin);
-        yield* Effect.mapError(process.exitCode, err => new Error(err.message));
-      }),
-    );
+    const process = yield* executor.start(command);
+    const fileStream = fs.stream(checkstyleFile);
+    yield* Stream.run(fileStream, process.stdin);
+    const exitCode = yield* process.exitCode;
+    if (exitCode != 0) {
+      yield* Effect.fail(
+        new Error(
+          `reviewdog exited with non-zero code: ${exitCode}. Please inspect reviewdog logs above`,
+        ),
+      );
+    }
   });
 
 export const ReviewDog = Context.GenericTag<ReviewDog>("ActionReviewDog");

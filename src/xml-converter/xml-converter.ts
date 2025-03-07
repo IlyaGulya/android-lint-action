@@ -115,7 +115,7 @@ export const buildCheckstyleXml = (
 ): Effect.Effect<string> => {
   return Effect.sync(() => {
     // Create checkstyle XML
-    const checkstyle = create({ version: "1.0", encoding: "utf8" }).ele(
+    const checkstyle = create({ version: "1.0", encoding: "utf-8" }).ele(
       "checkstyle",
       { version: "8.0" },
     );

@@ -10,10 +10,10 @@ jobs:
     steps:
       - name: Checkout 🛬
         uses: actions/checkout@v4
+      - name: Setup Reviewdog
+        uses: reviewdog/action-setup@v1
       - name: Github action template 🤩
         id: github-action-nodejs-template
         uses: ./
         with:
           lint_xml_file: tests/fixtures/issues.xml
-      - run: |
-          echo "Message: ${{ steps.github-action-nodejs-template.outputs.message }}"

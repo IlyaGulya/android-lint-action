@@ -114,7 +114,7 @@ describe("XML Converter", () => {
         const result = yield* buildCheckstyleXml([], mockConfig);
 
         // Verify the output
-        expect(result).toContain('<?xml version="1.0" encoding="utf8"?>');
+        expect(result).toContain('<?xml version="1.0" encoding="utf-8"?>');
         expect(result).toContain('<checkstyle version="8.0"/>');
       }),
     );
@@ -225,7 +225,7 @@ describe("XML Converter", () => {
 
         // Verify the expected content was written
         expect(writtenContent).toContain(
-          '<?xml version="1.0" encoding="utf8"?>',
+          '<?xml version="1.0" encoding="utf-8"?>',
         );
         expect(writtenContent).toContain('<checkstyle version="8.0">');
       }),

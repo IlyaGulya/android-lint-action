@@ -1,7 +1,7 @@
 import { CommandExecutor, FileSystem } from "@effect/platform";
 import { StandardCommand } from "@effect/platform/Command";
 import { ExitCode } from "@effect/platform/CommandExecutor";
-import { PlatformError, SystemError } from "@effect/platform/Error";
+import { PlatformError } from "@effect/platform/Error";
 import { it } from "@effect/vitest";
 import { Effect, Layer, pipe, Stream } from "effect";
 import { describe, expect, vi } from "vitest";
@@ -57,7 +57,7 @@ describe("ReviewDogImplementation", () => {
   });
 
   describe("run()", () => {
-    it.effect(
+    it.scoped(
       "should call reviewdog with the correct arguments and stream Uint8Array data",
       () => {
         const stream = vi.fn(() =>
@@ -111,7 +111,7 @@ describe("ReviewDogImplementation", () => {
       },
     );
 
-    it.effect(
+    it.scoped(
       "should handle exit code errors from the reviewdog command",
       () => {
         const stream = vi.fn(() => createUint8ArrayStream("data"));
@@ -120,15 +120,7 @@ describe("ReviewDogImplementation", () => {
         });
         // Use the configurable CommandExecutor mock to simulate a failing process.
         const executorMock = createCommandExecutorMock({
-          exitCode: Effect.fail(
-            SystemError({
-              module: "Command",
-              method: "start",
-              message: "reviewdog failed",
-              reason: "Unknown",
-              pathOrDescriptor: "",
-            }),
-          ),
+          exitCode: Effect.succeed(ExitCode(1)),
           stdin: { close: vi.fn() },
         });
         const commandExecutorLayer = Layer.succeed(
@@ -152,7 +144,9 @@ describe("ReviewDogImplementation", () => {
           ),
           Effect.catchAll(err =>
             Effect.sync(() => {
-              expect(err.message).toMatch(/reviewdog failed/);
+              expect(err.message).toContain(
+                "reviewdog exited with non-zero code: 1",
+              );
             }),
           ),
         );
