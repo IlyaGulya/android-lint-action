@@ -10,6 +10,8 @@ jobs:
     steps:
       - name: Checkout 🛬
         uses: actions/checkout@v4
+      - name: Setup Reviewdog 🐶
+        uses: reviewdog/action-setup@v1
       - name: Setup Node ⚙️
         uses: ./.github/actions/setup-node
       - name: Build typescript 📦
