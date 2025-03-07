@@ -1,6 +1,6 @@
 {
   "name": "android-lint-action",
-  "version": "1.0.0",
+  "version": "0.12.0",
   "description": "GitHub Action to report Android Lint issues using reviewdog",
   "main": "dist/index.js",
   "author": "Ilya Gulya",
