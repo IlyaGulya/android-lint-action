@@ -12,6 +12,7 @@ export interface ReviewDog {
 
   run(
     checkstyleFile: string,
+    github_token: string,
     name: string,
     reporter: string,
     level: string,
@@ -43,7 +44,7 @@ const ensureInstalled = () =>
         );
       }
 
-      yield* Effect.logDebug("Reviewdog is installed");
+      yield* Effect.logInfo("Reviewdog is installed");
     } catch (error) {
       return yield* Effect.fail(new Error(error?.toString()));
     }
@@ -54,6 +55,7 @@ const ensureInstalled = () =>
  */
 const run = (
   checkstyleFile: string,
+  github_token: string,
   name: string,
   reporter: string,
   level: string,
@@ -78,22 +80,44 @@ const run = (
         });
     }
 
-    yield* Effect.logDebug(
-      `Running reviewdog with args: ${String(args.join(" "))}`,
-    );
+    yield* Effect.log(`Running reviewdog with args: ${String(args.join(" "))}`);
     const fs = yield* FileSystem.FileSystem;
     const executor = yield* CommandExecutor.CommandExecutor;
 
+    const fileStream = fs.stream(checkstyleFile);
+
     // Create the command with reviewdog
     const command = Command.make("reviewdog", ...args).pipe(
-      Command.stdin("pipe"),
-      Command.stdout("inherit"),
-      Command.stderr("inherit"),
+      Command.env({
+        REVIEWDOG_GITHUB_API_TOKEN: github_token,
+      }),
+      Command.stdin(fileStream),
     );
 
     const process = yield* executor.start(command);
-    const fileStream = fs.stream(checkstyleFile);
-    yield* Stream.run(fileStream, process.stdin);
+
+    const stdout = Stream.decodeText(process.stdout).pipe(
+      Stream.map(line => "reviewdog: stdout: " + line),
+      Stream.catchAll(err =>
+        Stream.make(`reviewdog: unable to capture stdout: ${err.message}`),
+      ),
+      Stream.tap(Effect.logInfo),
+      Stream.runCollect,
+    );
+
+    yield* stdout;
+
+    const stderr = Stream.decodeText(process.stderr).pipe(
+      Stream.map(line => "reviewdog: stderr: " + line),
+      Stream.catchAll(err =>
+        Stream.make(`reviewdog: unable to capture stderr: ${err.message}`),
+      ),
+      Stream.tap(Effect.logError),
+      Stream.runCollect,
+    );
+
+    yield* stderr;
+
     const exitCode = yield* process.exitCode;
     if (exitCode != 0) {
       yield* Effect.fail(

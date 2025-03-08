@@ -43,12 +43,7 @@ export const createMockProcess = (options?: ProcessMockOptions): Process => {
     kill: vi.fn((signal?: Signal) =>
       options?.kill ? options.kill(signal) : Effect.succeedNone,
     ),
-    stdout:
-      options?.stdout ??
-      (Stream.fromIterable([]) as unknown as Stream.Stream<
-        Uint8Array,
-        PlatformError
-      >),
+    stdout: options?.stdout ?? Stream.fromIterable<Uint8Array>([]),
     stderr:
       options?.stderr ??
       (Stream.fromIterable([]) as unknown as Stream.Stream<
@@ -72,6 +67,9 @@ export const createCommandExecutorMock = (
 ): MockedObject<CommandExecutor.CommandExecutor> => {
   const dummyProcess = createMockProcess(processOptions);
   return {
+    exitCode: vi.fn(() => {
+      return processOptions?.exitCode ?? Effect.succeed(ExitCode(0));
+    }),
     start: vi.fn(() => {
       // Return a lazy effect wrapping the dummy process.
       return Effect.sync(() => dummyProcess);

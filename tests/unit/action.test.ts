@@ -145,6 +145,7 @@ describe("Action", () => {
         // Verify reviewdog was executed with expected params
         expect(reviewDog.run).toHaveBeenCalledWith(
           expect.stringContaining("output_checkstyle.xml"),
+          "fake-token",
           "Android Lint",
           "github-pr-check",
           "warning",
