@@ -1,3 +1,6 @@
+import fs from "node:fs";
+import * as process from "node:process";
+
 import * as core from "@actions/core";
 import { NodeContext, NodeRuntime } from "@effect/platform-node";
 import { Effect, Layer, pipe } from "effect";
@@ -14,6 +17,9 @@ import { XmlConverter } from "./xml-converter";
 
 const outputs = new CoreOutputs();
 const inputs = new CoreInputs();
+
+console.log(`CWD:${process.cwd()}`);
+console.log(`Files: ${fs.readdirSync(".").join("\n")}`);
 
 const program = pipe(
   runAction(inputs),
