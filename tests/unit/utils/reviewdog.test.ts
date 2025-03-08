@@ -3,7 +3,7 @@ import { StandardCommand } from "@effect/platform/Command";
 import { ExitCode } from "@effect/platform/CommandExecutor";
 import { PlatformError } from "@effect/platform/Error";
 import { it } from "@effect/vitest";
-import { Effect, Layer, pipe, Stream } from "effect";
+import { Effect, Layer, Logger, pipe, Stream } from "effect";
 import { describe, expect, vi } from "vitest";
 
 import { createCommandExecutorMock } from "@/tests/utils/command-executor";
@@ -160,4 +160,73 @@ describe("ReviewDogImplementation", () => {
       },
     );
   });
+
+  it.scoped(
+    "should forward reviewdog stdout and stderr to corresponging log",
+    () => {
+      const mockLogInfo = vi.fn();
+      const mockLogError = vi.fn();
+      const testLogger = Logger.make(({ logLevel, message }) => {
+        const actualMessage = Array.isArray(message)
+          ? message.join(" ")
+          : message;
+        if (logLevel.label === "INFO") {
+          // If message is an array, join it or take the first element
+          mockLogInfo(actualMessage);
+        }
+        if (logLevel.label === "ERROR") {
+          mockLogError(actualMessage);
+        }
+      });
+
+      // Create a layer that replaces the default logger
+      const loggerLayer = Logger.replace(Logger.defaultLogger, testLogger);
+
+      const fsMock = FileSystem.layerNoop({
+        stream: () => createUint8ArrayStream("data"),
+      });
+      const executorMock = createCommandExecutorMock({
+        exitCode: Effect.succeed(ExitCode(0)),
+        stdin: { close: vi.fn() },
+        stdout: createUint8ArrayStream("log message 1\nlog message 2"),
+        stderr: createUint8ArrayStream("error log\n"),
+      });
+      const commandExecutorLayer = Layer.succeed(
+        CommandExecutor.CommandExecutor,
+        executorMock,
+      );
+      return pipe(
+        Effect.gen(function* () {
+          const reviewdog = yield* ReviewDog.ReviewDog;
+
+          yield* reviewdog.run(
+            "fake-checkstyle.xml",
+            "token",
+            "myCheck",
+            "github-pr-review",
+            "error",
+          );
+
+          expect(mockLogInfo).toBeCalledWith(
+            expect.stringContaining("log message 1"),
+          );
+          expect(mockLogInfo).toBeCalledWith(
+            expect.stringContaining("log message 2"),
+          );
+          expect(mockLogError).toBeCalledWith(
+            expect.stringContaining("error log"),
+          );
+        }),
+        Effect.provide(
+          Layer.mergeAll(
+            fsMock,
+            commandExecutorLayer,
+            loggerLayer,
+            IOService.layerNoop({}),
+            ReviewDog.layer,
+          ),
+        ),
+      );
+    },
+  );
 });

@@ -1,6 +1,6 @@
 import { Command, CommandExecutor, FileSystem } from "@effect/platform";
 import { PlatformError } from "@effect/platform/Error";
-import { Context, Effect, Layer, Scope, Stream } from "effect";
+import { Context, Effect, Fiber, Layer, Scope, Stream } from "effect";
 
 import { IOService } from "../effects/actions";
 
@@ -44,7 +44,7 @@ const ensureInstalled = () =>
         );
       }
 
-      yield* Effect.logDebug("Reviewdog is installed");
+      yield* Effect.logInfo("Reviewdog is installed");
     } catch (error) {
       return yield* Effect.fail(new Error(error?.toString()));
     }
@@ -80,7 +80,7 @@ const run = (
         });
     }
 
-    yield* Effect.logDebug(
+    yield* Effect.logInfo(
       `Running reviewdog with args: ${String(args.join(" "))}`,
     );
     const fs = yield* FileSystem.FileSystem;
@@ -90,15 +90,39 @@ const run = (
     const command = Command.make("reviewdog", ...args).pipe(
       Command.stdin("pipe"),
       Command.stdout("inherit"),
-      Command.stderr("inherit"),
+      // Command.stderr("inherit"),
       Command.env({
         REVIEWDOG_GITHUB_API_TOKEN: github_token,
       }),
     );
 
     const process = yield* executor.start(command);
+
+    const stdout = yield* Stream.decodeText(process.stdout).pipe(
+      Stream.map(line => `reviewdog: stdout: ${line}`),
+      Stream.catchAll(err =>
+        Stream.make(`reviewdog: unable to capture stdout ${err.message}`),
+      ),
+      Stream.tap(Effect.logInfo),
+      Stream.runCollect,
+      Effect.fork,
+    );
+
+    const stderr = yield* Stream.decodeText(process.stderr).pipe(
+      Stream.map(line => `reviewdog: stderr: ${line}`),
+      Stream.catchAll(err =>
+        Stream.make(`reviewdog: unable to capture stderr ${err.message}`),
+      ),
+      Stream.tap(Effect.logError),
+      Stream.runCollect,
+      Effect.fork,
+    );
+
     const fileStream = fs.stream(checkstyleFile);
     yield* Stream.run(fileStream, process.stdin);
+
+    yield* Fiber.awaitAll([stdout, stderr]);
+
     const exitCode = yield* process.exitCode;
     if (exitCode != 0) {
       yield* Effect.fail(
