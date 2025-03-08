@@ -2,9 +2,10 @@ import { CommandExecutor, FileSystem } from "@effect/platform";
 import { StandardCommand } from "@effect/platform/Command";
 import { ExitCode } from "@effect/platform/CommandExecutor";
 import { PlatformError } from "@effect/platform/Error";
+import { NodeContext } from "@effect/platform-node";
 import { it } from "@effect/vitest";
-import { Effect, Layer, Logger, pipe, Stream } from "effect";
-import { describe, expect, vi } from "vitest";
+import { Effect, Exit, Layer, Logger, pipe, Stream } from "effect";
+import { assert, describe, expect, vi } from "vitest";
 
 import { createCommandExecutorMock } from "@/tests/utils/command-executor";
 
@@ -13,10 +14,12 @@ import { ReviewDog } from "@/src/reviewdog";
 
 // Helper: create a stream of Uint8Array from string data
 function createUint8ArrayStream(
-  data: string,
+  ...data: string[]
 ): Stream.Stream<Uint8Array, PlatformError> {
-  const encodedData = new TextEncoder().encode(data);
-  return Stream.fromIterable([encodedData]);
+  const encoder = new TextEncoder();
+  return Stream.fromIterable(data).pipe(
+    Stream.map(line => encoder.encode(line)),
+  );
 }
 
 describe("ReviewDogImplementation", () => {
@@ -188,8 +191,8 @@ describe("ReviewDogImplementation", () => {
       const executorMock = createCommandExecutorMock({
         exitCode: Effect.succeed(ExitCode(0)),
         stdin: { close: vi.fn() },
-        stdout: createUint8ArrayStream("log message 1\nlog message 2"),
-        stderr: createUint8ArrayStream("error log\n"),
+        stdout: createUint8ArrayStream("log message 1", "log message 2"),
+        stderr: createUint8ArrayStream("error log"),
       });
       const commandExecutorLayer = Layer.succeed(
         CommandExecutor.CommandExecutor,
@@ -208,14 +211,15 @@ describe("ReviewDogImplementation", () => {
           );
 
           expect(mockLogInfo).toBeCalledWith(
-            expect.stringContaining("log message 1"),
+            "Running reviewdog with args: -f=checkstyle -name=myCheck -reporter=github-pr-review -level=error",
           );
           expect(mockLogInfo).toBeCalledWith(
-            expect.stringContaining("log message 2"),
+            "reviewdog: stdout: log message 1",
           );
-          expect(mockLogError).toBeCalledWith(
-            expect.stringContaining("error log"),
+          expect(mockLogInfo).toBeCalledWith(
+            "reviewdog: stdout: log message 2",
           );
+          expect(mockLogError).toBeCalledWith("reviewdog: stderr: error log");
         }),
         Effect.provide(
           Layer.mergeAll(
@@ -228,5 +232,67 @@ describe("ReviewDogImplementation", () => {
         ),
       );
     },
+  );
+  it.scoped(
+    "should forward real reviewdog stdout and stderr to corresponging log",
+    () => {
+      const mockLogInfo = vi.fn();
+      const mockLogError = vi.fn();
+      const testLogger = Logger.make(({ logLevel, message }) => {
+        const actualMessage = Array.isArray(message)
+          ? message.join(" ")
+          : message;
+        if (logLevel.label === "INFO") {
+          // If message is an array, join it or take the first element
+          mockLogInfo(actualMessage);
+        }
+        if (logLevel.label === "ERROR") {
+          mockLogError(actualMessage);
+        }
+      });
+
+      // Create a layer that replaces the default logger
+      const loggerLayer = Logger.replace(Logger.defaultLogger, testLogger);
+
+      const fsMock = FileSystem.layerNoop({
+        stream: () => createUint8ArrayStream("data"),
+      });
+      return pipe(
+        Effect.gen(function* () {
+          const reviewdog = yield* ReviewDog.ReviewDog;
+
+          const result = yield* Effect.exit(
+            reviewdog.run(
+              "tests/fixtures/issues.xml",
+              "token",
+              "myCheck",
+              "github-pr-review",
+              "error",
+            ),
+          );
+
+          assert(Exit.isFailure(result));
+
+          expect(mockLogInfo).toBeCalledWith(
+            expect.stringContaining("Running reviewdog"),
+          );
+          expect(mockLogError).toBeCalledWith(
+            expect.stringContaining(
+              "reviewdog: cannot get repo owner from environment variable. Set CI_REPO_OWNER",
+            ),
+          );
+        }),
+        Effect.provide(
+          Layer.mergeAll(
+            fsMock,
+            NodeContext.layer,
+            loggerLayer,
+            IOService.layerNoop({}),
+            ReviewDog.layer,
+          ),
+        ),
+      );
+    },
+    100000000,
   );
 });
