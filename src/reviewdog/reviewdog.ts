@@ -12,6 +12,7 @@ export interface ReviewDog {
 
   run(
     checkstyleFile: string,
+    github_token: string,
     name: string,
     reporter: string,
     level: string,
@@ -54,6 +55,7 @@ const ensureInstalled = () =>
  */
 const run = (
   checkstyleFile: string,
+  github_token: string,
   name: string,
   reporter: string,
   level: string,
@@ -89,6 +91,9 @@ const run = (
       Command.stdin("pipe"),
       Command.stdout("inherit"),
       Command.stderr("inherit"),
+      Command.env({
+        REVIEWDOG_GITHUB_API_TOKEN: github_token,
+      }),
     );
 
     const process = yield* executor.start(command);

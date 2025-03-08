@@ -81,6 +81,7 @@ describe("ReviewDogImplementation", () => {
             const reviewDog = yield* ReviewDog.ReviewDog;
             yield* reviewDog.run(
               "fake-checkstyle.xml",
+              "token",
               "myCheck",
               "github-pr-review",
               "error",
@@ -131,7 +132,13 @@ describe("ReviewDogImplementation", () => {
         return pipe(
           Effect.gen(function* () {
             const reviewDog = yield* ReviewDog.ReviewDog;
-            yield* reviewDog.run("someFile", "testName", "local", "warning");
+            yield* reviewDog.run(
+              "someFile",
+              "token",
+              "testName",
+              "local",
+              "warning",
+            );
             throw new Error("Expected failure, but succeeded.");
           }),
           Effect.provide(

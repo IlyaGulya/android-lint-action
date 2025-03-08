@@ -20,15 +20,6 @@ export function runAction(inputs: Inputs) {
 
     yield* Effect.logInfo("Running android-lint-action");
 
-    // Set environment variable for reviewdog
-    yield* Effect.sync(() => {
-      process.env.REVIEWDOG_GITHUB_API_TOKEN = inputs.github_token;
-    });
-
-    // Set paths
-    const workspacePath = process.env.RUNNER_WORKSPACE ?? "";
-    const inputLintFile = path.join(workspacePath, inputs.lint_xml_file);
-
     // Get temporary directory
     const tempDir = yield* fs.makeTempDirectoryScoped();
 
@@ -36,11 +27,11 @@ export function runAction(inputs: Inputs) {
 
     // Convert Android Lint XML to Checkstyle format
     yield* Effect.logInfo(
-      `Converting ${inputLintFile} to Checkstyle format...`,
+      `Converting ${inputs.lint_xml_file} to Checkstyle format...`,
     );
 
     yield* xmlConverter.convertLintToCheckstyle(
-      inputLintFile,
+      inputs.lint_xml_file,
       outputCheckstyleFile,
     );
 
@@ -52,6 +43,7 @@ export function runAction(inputs: Inputs) {
     // Run reviewdog
     yield* reviewDog.run(
       outputCheckstyleFile,
+      inputs.github_token,
       "Android Lint",
       inputs.reporter,
       inputs.level,
