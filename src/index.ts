@@ -19,6 +19,7 @@ const outputs = new CoreOutputs();
 const inputs = new CoreInputs();
 
 console.log(`CWD:${process.cwd()}`);
+console.log(`Fixtures: ${fs.readdirSync("tests/fixtures").join("\n")}`);
 console.log(`Files: ${fs.readdirSync(".").join("\n")}`);
 
 const program = pipe(
