@@ -1,41 +1,26 @@
 import * as core from "@actions/core";
-import { NodeContext, NodeRuntime } from "@effect/platform-node";
-import { Effect, Layer, pipe } from "effect";
-import * as Cause from "effect/Cause";
-import * as Exit from "effect/Exit";
 
-import { ActionOutputs, runAction } from "@/src/action";
-import { CoreOutputs } from "@/src/outputs/core-outputs";
+import { runAction } from "@/src/action";
+import { NodeFileSystem } from "@/src/fs";
+import { CoreInputs } from "@/src/inputs/core-inputs";
+import { ActionsIOService } from "@/src/io";
+import { ConsoleLogger } from "@/src/logger";
+import { ReviewDogImpl } from "@/src/reviewdog";
+import { XmlConverterImpl } from "@/src/xml-converter";
 
-import { IOService } from "./effects/actions";
-import { CoreInputs } from "./inputs/core-inputs";
-import { ReviewDog } from "./reviewdog";
-import { XmlConverter } from "./xml-converter";
+async function main(): Promise<void> {
+  try {
+    const inputs = new CoreInputs();
+    const fileSystem = new NodeFileSystem();
+    const ioService = new ActionsIOService();
+    const logger = new ConsoleLogger();
+    const xmlConverter = new XmlConverterImpl(fileSystem);
+    const reviewDog = new ReviewDogImpl(ioService, logger);
 
-const outputs = new CoreOutputs();
-const inputs = new CoreInputs();
+    await runAction(inputs, fileSystem, xmlConverter, reviewDog, logger);
+  } catch (error: unknown) {
+    core.setFailed(error as Error);
+  }
+}
 
-const program = pipe(
-  runAction(inputs),
-  Effect.provide(
-    Layer.mergeAll(
-      Layer.succeed(ActionOutputs, outputs),
-      IOService.layer,
-      NodeContext.layer,
-      ReviewDog.layer,
-      XmlConverter.layer,
-    ),
-  ),
-  Effect.scoped,
-);
-
-NodeRuntime.runMain(program, {
-  teardown: function teardown(exit, onExit) {
-    if (Exit.isFailure(exit) && !Cause.isInterruptedOnly(exit.cause)) {
-      core.setFailed(exit.cause.toString());
-      onExit(1);
-    } else {
-      onExit(0);
-    }
-  },
-});
+await main();
