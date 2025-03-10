@@ -20,6 +20,6 @@ jobs:
         uses: ./
         with:
           lint_xml_file: tests/fixtures/issues.xml
-          reviewdog_flags: -filter-mode=nofilter -fail-on-error -tee
+          reviewdog_flags: -filter-mode=nofilter -fail-level=error
           reporter: github-pr-check
           level: error
