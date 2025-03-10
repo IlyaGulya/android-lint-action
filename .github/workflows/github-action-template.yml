@@ -12,8 +12,14 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Reviewdog
         uses: reviewdog/action-setup@v1
+      - name: test
+        run: |
+          ls tests/fixtures/issues.xml
       - name: Github action template 🤩
         id: github-action-nodejs-template
         uses: ./
         with:
           lint_xml_file: tests/fixtures/issues.xml
+          reviewdog_flags: -filter-mode=nofilter -fail-level=error
+          reporter: github-pr-check
+          level: error
