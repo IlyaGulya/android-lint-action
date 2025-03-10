@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.12.1](https://github.com/IlyaGulya/android-lint-action/compare/v0.12.0...v0.12.1) (2025-03-10)
+
+
+### 🔄 Refactoring
+
+* remove effect-ts ([#13](https://github.com/IlyaGulya/android-lint-action/issues/13)) ([57264bd](https://github.com/IlyaGulya/android-lint-action/commit/57264bd277b09b3aa570cd9f261d4a47939e5423))
+
 ## [0.12.0](https://github.com/IlyaGulya/android-lint-action/compare/v0.11.2...v0.12.0) (2025-03-07)
 
 
