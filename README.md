@@ -7,7 +7,7 @@
 <p align="center">
   <a href="https://github.com/ilyagulya/android-lint-action/actions/workflows/node.yml?branch=main"><img src="https://github.com/ilyagulya/android-lint-action/actions/workflows/node.yml/badge.svg?branch=main" alt="nodejs"/></a>
   <a href="https://nodejs.org/docs/latest-v20.x/api/index.html"><img src="https://img.shields.io/badge/node-20.x-green.svg" alt="node"/></a>
-  <a href="https://pnpm.io/"><img src="https://img.shields.io/badge/pnpm-9.x-red.svg" alt="pnpm"/></a>
+  <a href="https://pnpm.io/"><img src="https://img.shields.io/badge/pnpm-10.6.1-green.svg" alt="pnpm"/></a>
   <a href="https://nodejs.org"><img src="https://img.shields.io/badge/supported_node-20.x-forestgreen.svg" alt="supported node"/></a>
   <a href="https://www.typescriptlang.org/"><img src="https://img.shields.io/badge/typescript-5.x-blue.svg" alt="typescript"/></a>
 </p>
