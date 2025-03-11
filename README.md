@@ -1,7 +1,3 @@
-<p align="center">
-  <a href="https://github.com/ilyagulya/android-lint-action" target="blank"><img src="images/logo.png" alt="Android Lint Action Logo" width="512" /></a>
-</p>
-
 <h1 align="center">⭐ Android Lint Action ⭐</h1>
 
 <p align="center">
