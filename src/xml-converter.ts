@@ -11,7 +11,7 @@ interface ParsedXml {
 }
 
 // Define interface for the business model
-interface LintIssue {
+export interface LintIssue {
   id?: string;
   message?: string;
   severity?: string;
@@ -39,8 +39,14 @@ export interface XmlConverterConfig {
   repoName: string;
 }
 
+/** A lint report parsed once, reusable by every reporter. */
+export interface LintReport {
+  readonly issues: LintIssue[];
+  readonly checkstyleXml: string;
+}
+
 export interface XmlConverter {
-  convertLintToCheckstyle(inputFilePath: string): Promise<string>;
+  convertLintToCheckstyle(inputFilePath: string): Promise<LintReport>;
 }
 
 export function getDefaultConfig(): XmlConverterConfig {
@@ -87,6 +93,17 @@ export function parseXmlToIssues(xmlData: string): LintIssue[] {
   return result;
 }
 
+/**
+ * Lint records absolute paths, but GitHub only renders annotations for paths
+ * relative to the repository root.
+ */
+export function toRepoRelativePath(
+  file: string,
+  config: XmlConverterConfig,
+): string {
+  return file.replace(`${config.workspacePath}/${config.repoName}/`, "").trim();
+}
+
 export function buildCheckstyleXml(
   issues: LintIssue[],
   config: XmlConverterConfig,
@@ -108,9 +125,7 @@ export function buildCheckstyleXml(
       continue;
     }
 
-    const filePath = file
-      .replace(`${config.workspacePath}/${config.repoName}/`, "")
-      .trim();
+    const filePath = toRepoRelativePath(file, config);
     if (!filePath) {
       continue;
     }
@@ -135,9 +150,23 @@ export function buildCheckstyleXml(
 export class XmlConverterImpl implements XmlConverter {
   constructor(private fileSystem: FileSystem) {}
 
-  async convertLintToCheckstyle(inputFilePath: string): Promise<string> {
+  async convertLintToCheckstyle(inputFilePath: string): Promise<LintReport> {
     const xmlData = await this.fileSystem.readFileString(inputFilePath);
-    const issues = parseXmlToIssues(xmlData);
-    return buildCheckstyleXml(issues, getDefaultConfig());
+    const config = getDefaultConfig();
+    const issues = parseXmlToIssues(xmlData).map(issue => ({
+      ...issue,
+      location: issue.location
+        ? {
+            ...issue.location,
+            file: issue.location.file
+              ? toRepoRelativePath(issue.location.file, config)
+              : issue.location.file,
+          }
+        : issue.location,
+    }));
+    return {
+      issues,
+      checkstyleXml: buildCheckstyleXml(issues, config),
+    };
   }
 }

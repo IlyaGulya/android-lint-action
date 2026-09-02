@@ -84,3 +84,39 @@ Alternatively, you can install reviewdog manually:
 2. Converts the Android Lint XML format to Checkstyle XML format
 3. Verifies that reviewdog is installed
 4. Uses reviewdog to report the issues on GitHub pull requests or checks
+5. If reviewdog cannot deliver its report, falls back to workflow annotations
+
+## 🐘 Large pull requests
+
+reviewdog fetches the pull request diff before it applies `-filter-mode`, so
+even under `nofilter` the diff is downloaded and then discarded. Past 300
+changed files GitHub's diff API answers `406`, reviewdog falls back to
+`git fetch`, and that fetch fails on a checkout made with
+`persist-credentials: false`:
+
+```
+reviewdog: fail to get diff: failed to run git fetch:
+  fatal: could not read Username for 'https://github.com': No such device or address
+```
+
+See [reviewdog#2150](https://github.com/reviewdog/reviewdog/issues/2150) and
+[reviewdog#2187](https://github.com/reviewdog/reviewdog/issues/2187).
+
+This action handles that in two ways:
+
+- **It avoids the fetch.** When the checkout has full history
+  (`fetch-depth: 0`), there is nothing to fetch, so the action sets
+  `REVIEWDOG_SKIP_GIT_FETCH=true` and reviewdog resolves the diff locally.
+  Set that variable yourself to override the behaviour either way.
+- **It does not fail the job over a transport error.** If reviewdog still
+  cannot post its report, the issues are emitted as workflow annotations and
+  written to the step summary, so they stay visible instead of being replaced
+  by a red check with no findings.
+
+Giving the checkout full history makes the first path available:
+
+```yaml
+- uses: actions/checkout@v4
+  with:
+    fetch-depth: 0
+```

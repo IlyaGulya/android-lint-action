@@ -73,7 +73,33 @@ describe("XML Converter", () => {
     );
     const converter = new XmlConverterImpl(fileSystem);
     const result = await converter.convertLintToCheckstyle("/input.xml");
-    expect(result).toContain('<file name="file.kt">');
+    expect(result.checkstyleXml).toContain('<file name="file.kt">');
+  });
+
+  it("convertLintToCheckstyle also returns the parsed issues", async () => {
+    fileSystem.readFileString.mockResolvedValue(
+      '<issues><issue id="Test" message="Boom" severity="warning"><location file="/workspace/repo/file.kt" line="7"/></issue></issues>',
+    );
+    const converter = new XmlConverterImpl(fileSystem);
+    const result = await converter.convertLintToCheckstyle("/input.xml");
+    expect(result.issues).toHaveLength(1);
+    expect(result.issues[0]).toMatchObject({
+      id: "Test",
+      message: "Boom",
+      severity: "warning",
+    });
+  });
+
+  it("makes issue paths repo-relative for every reporter", async () => {
+    fileSystem.readFileString.mockResolvedValue(
+      '<issues><issue id="Test" message="Boom" severity="warning"><location file="/workspace/repo/app/src/File.kt" line="7"/></issue></issues>',
+    );
+    const converter = new XmlConverterImpl(fileSystem);
+    const result = await converter.convertLintToCheckstyle("/input.xml");
+
+    // GitHub only renders annotations for repo-relative paths.
+    expect(result.issues[0]?.location?.file).toBe("app/src/File.kt");
+    expect(result.checkstyleXml).toContain('name="app/src/File.kt"');
   });
 
   it("getDefaultConfig uses env vars", () => {

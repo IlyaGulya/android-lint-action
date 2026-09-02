@@ -62680,38 +62680,173 @@ exports.YAMLWriter = YAMLWriter_1.YAMLWriter;
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   C: () => (/* binding */ runAction)
 /* harmony export */ });
-async function runAction(inputs, fileSystem, xmlConverter, reviewDog, logger) {
+/* harmony import */ var _src_reviewdog__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(6223);
+
+/**
+ * reviewdog fetches the pull request diff before it looks at -filter-mode, so
+ * under `nofilter` the diff is downloaded only to be discarded. Past 300
+ * changed files GitHub's diff API answers 406 and reviewdog falls back to
+ * `git fetch`, which fails outright on a checkout made with
+ * `persist-credentials: false`.
+ *
+ * When the checkout already has full history there is nothing to fetch, so we
+ * ask reviewdog to skip it. See reviewdog/reviewdog#2150 and #2187.
+ */
+async function skipGitFetchEnv(git, logger) {
+    if (process.env.REVIEWDOG_SKIP_GIT_FETCH) {
+        return {};
+    }
+    if (!(await git.hasFullHistory())) {
+        return {};
+    }
+    logger.info("Checkout has full history; setting REVIEWDOG_SKIP_GIT_FETCH=true " +
+        "so reviewdog resolves the diff locally.");
+    return { REVIEWDOG_SKIP_GIT_FETCH: "true" };
+}
+async function runAction(inputs, fileSystem, xmlConverter, reviewDog, logger, git, annotations, summary) {
     logger.info("Running android-lint-action");
     logger.info(`Converting ${inputs.lint_xml_file} to Checkstyle format...`);
-    const checkstyleXml = await xmlConverter.convertLintToCheckstyle(inputs.lint_xml_file);
+    const report = await xmlConverter.convertLintToCheckstyle(inputs.lint_xml_file);
     logger.info("Conversion completed");
     await reviewDog.ensureInstalled();
-    await reviewDog.run(checkstyleXml, inputs.github_token, "Android Lint", inputs.reporter, inputs.level, inputs.reviewdog_flags);
+    const extraEnv = await skipGitFetchEnv(git, logger);
+    try {
+        await reviewDog.run(report.checkstyleXml, inputs.github_token, "Android Lint", inputs.reporter, inputs.level, inputs.reviewdog_flags, extraEnv);
+    }
+    catch (error) {
+        if (!(error instanceof _src_reviewdog__WEBPACK_IMPORTED_MODULE_0__/* .ReviewDogDeliveryError */ .zx)) {
+            throw error;
+        }
+        // The findings themselves are intact -- only delivery through the API
+        // failed. Report them as workflow annotations instead of failing the job
+        // over a transport problem.
+        logger.error(`Could not report through reviewdog: ${error.message}\n` +
+            "Falling back to workflow annotations.");
+        annotations.report(report.issues);
+        if (summary.isAvailable()) {
+            await summary.write(report.issues, "reviewdog could not post its report, so the issues below are " +
+                "reported as workflow annotations instead.");
+        }
+    }
     logger.info("Finished android-lint-action");
 }
 
 
 /***/ }),
 
-/***/ 644:
+/***/ 3843:
 /***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
 
+/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   x: () => (/* binding */ AnnotationReporter)
+/* harmony export */ });
+/**
+ * Maps Android Lint severities onto the two workflow-command levels GitHub
+ * renders. Lint's "fatal" and "error" are errors; everything else is a warning.
+ */
+function commandFor(severity) {
+    const normalized = (severity ?? "").toLowerCase();
+    return normalized === "error" || normalized === "fatal" ? "error" : "warning";
+}
+/** Escapes a workflow command property value. See GitHub's workflow-command docs. */
+function escapeProperty(value) {
+    return value
+        .replace(/%/g, "%25")
+        .replace(/\r/g, "%0D")
+        .replace(/\n/g, "%0A")
+        .replace(/:/g, "%3A")
+        .replace(/,/g, "%2C");
+}
+/** Escapes a workflow command message body. */
+function escapeData(value) {
+    return value.replace(/%/g, "%25").replace(/\r/g, "%0D").replace(/\n/g, "%0A");
+}
+/**
+ * Reports issues as GitHub Actions workflow commands.
+ *
+ * These surface in the job log and, for files touched by the PR, inline in the
+ * diff. Unlike the reviewdog reporters this needs no API call and no diff, so
+ * it still works when reporting through the API is impossible.
+ */
+class AnnotationReporter {
+    logger;
+    constructor(logger) {
+        this.logger = logger;
+    }
+    report(issues) {
+        for (const issue of issues) {
+            const command = commandFor(issue.severity);
+            const props = [];
+            const file = issue.location?.file;
+            if (file) {
+                props.push(`file=${escapeProperty(file)}`);
+            }
+            if (issue.location?.line !== undefined) {
+                props.push(`line=${issue.location.line}`);
+            }
+            if (issue.location?.column !== undefined) {
+                props.push(`col=${issue.location.column}`);
+            }
+            if (issue.id) {
+                props.push(`title=${escapeProperty(issue.id)}`);
+            }
+            const suffix = props.length > 0 ? ` ${props.join(",")}` : "";
+            this.logger.info(`::${command}${suffix}::${escapeData(issue.message ?? "")}`);
+        }
+    }
+}
 
-// EXPORTS
-__nccwpck_require__.d(__webpack_exports__, {
-  O: () => (/* binding */ NodeFileSystem)
-});
 
-;// CONCATENATED MODULE: external "fs/promises"
-const promises_namespaceObject = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs/promises");
-;// CONCATENATED MODULE: ./src/fs.ts
+/***/ }),
+
+/***/ 7682:
+/***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
+
+/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   O: () => (/* binding */ NodeFileSystem)
+/* harmony export */ });
+/* harmony import */ var fs_promises__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(1943);
+/* harmony import */ var fs_promises__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(fs_promises__WEBPACK_IMPORTED_MODULE_0__);
 
 class NodeFileSystem {
     async readFileString(filePath) {
-        return promises_namespaceObject.readFile(filePath, "utf8");
+        return fs_promises__WEBPACK_IMPORTED_MODULE_0__.readFile(filePath, "utf8");
     }
     async writeFileString(filePath, content) {
-        await promises_namespaceObject.writeFile(filePath, content, "utf8");
+        await fs_promises__WEBPACK_IMPORTED_MODULE_0__.writeFile(filePath, content, "utf8");
+    }
+}
+
+
+/***/ }),
+
+/***/ 3529:
+/***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
+
+/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   T: () => (/* binding */ GitCli)
+/* harmony export */ });
+/* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(5317);
+/* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(child_process__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var util__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(9023);
+/* harmony import */ var util__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(util__WEBPACK_IMPORTED_MODULE_1__);
+
+
+const execFileAsync = (0,util__WEBPACK_IMPORTED_MODULE_1__.promisify)(child_process__WEBPACK_IMPORTED_MODULE_0__.execFile);
+class GitCli {
+    async hasFullHistory() {
+        try {
+            const { stdout } = await execFileAsync("git", [
+                "rev-parse",
+                "--is-shallow-repository",
+            ]);
+            return stdout.trim() === "false";
+        }
+        catch {
+            // Not a git repo, or git is unavailable: assume we cannot rely on local
+            // history and let reviewdog fetch as usual.
+            return false;
+        }
     }
 }
 
@@ -62722,15 +62857,24 @@ class NodeFileSystem {
 /***/ ((module, __unused_webpack___webpack_exports__, __nccwpck_require__) => {
 
 __nccwpck_require__.a(module, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {
-/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(9999);
-/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_0__);
-/* harmony import */ var _src_action__WEBPACK_IMPORTED_MODULE_7__ = __nccwpck_require__(7611);
-/* harmony import */ var _src_fs__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(644);
-/* harmony import */ var _src_inputs_core_inputs__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(1920);
-/* harmony import */ var _src_io__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(6165);
-/* harmony import */ var _src_logger__WEBPACK_IMPORTED_MODULE_6__ = __nccwpck_require__(1661);
-/* harmony import */ var _src_reviewdog__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(6223);
-/* harmony import */ var _src_xml_converter__WEBPACK_IMPORTED_MODULE_5__ = __nccwpck_require__(577);
+/* harmony import */ var fs_promises__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(1943);
+/* harmony import */ var fs_promises__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(fs_promises__WEBPACK_IMPORTED_MODULE_0__);
+/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(9999);
+/* harmony import */ var _actions_core__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(_actions_core__WEBPACK_IMPORTED_MODULE_1__);
+/* harmony import */ var _src_action__WEBPACK_IMPORTED_MODULE_2__ = __nccwpck_require__(7611);
+/* harmony import */ var _src_annotations__WEBPACK_IMPORTED_MODULE_10__ = __nccwpck_require__(3843);
+/* harmony import */ var _src_fs__WEBPACK_IMPORTED_MODULE_3__ = __nccwpck_require__(7682);
+/* harmony import */ var _src_git__WEBPACK_IMPORTED_MODULE_4__ = __nccwpck_require__(3529);
+/* harmony import */ var _src_inputs_core_inputs__WEBPACK_IMPORTED_MODULE_5__ = __nccwpck_require__(1920);
+/* harmony import */ var _src_io__WEBPACK_IMPORTED_MODULE_6__ = __nccwpck_require__(6165);
+/* harmony import */ var _src_logger__WEBPACK_IMPORTED_MODULE_9__ = __nccwpck_require__(1661);
+/* harmony import */ var _src_reviewdog__WEBPACK_IMPORTED_MODULE_7__ = __nccwpck_require__(6223);
+/* harmony import */ var _src_summary__WEBPACK_IMPORTED_MODULE_11__ = __nccwpck_require__(417);
+/* harmony import */ var _src_xml_converter__WEBPACK_IMPORTED_MODULE_8__ = __nccwpck_require__(577);
+
+
+
+
 
 
 
@@ -62741,16 +62885,19 @@ __nccwpck_require__.a(module, async (__webpack_handle_async_dependencies__, __we
 
 async function main() {
     try {
-        const inputs = new _src_inputs_core_inputs__WEBPACK_IMPORTED_MODULE_2__/* .CoreInputs */ .j();
-        const fileSystem = new _src_fs__WEBPACK_IMPORTED_MODULE_1__/* .NodeFileSystem */ .O();
-        const ioService = new _src_io__WEBPACK_IMPORTED_MODULE_3__/* .ActionsIOService */ .n();
-        const logger = new _src_logger__WEBPACK_IMPORTED_MODULE_6__/* .ConsoleLogger */ .C();
-        const xmlConverter = new _src_xml_converter__WEBPACK_IMPORTED_MODULE_5__/* .XmlConverterImpl */ .i_(fileSystem);
-        const reviewDog = new _src_reviewdog__WEBPACK_IMPORTED_MODULE_4__/* .ReviewDogImpl */ .j(ioService, logger);
-        await (0,_src_action__WEBPACK_IMPORTED_MODULE_7__/* .runAction */ .C)(inputs, fileSystem, xmlConverter, reviewDog, logger);
+        const inputs = new _src_inputs_core_inputs__WEBPACK_IMPORTED_MODULE_5__/* .CoreInputs */ .j();
+        const fileSystem = new _src_fs__WEBPACK_IMPORTED_MODULE_3__/* .NodeFileSystem */ .O();
+        const ioService = new _src_io__WEBPACK_IMPORTED_MODULE_6__/* .ActionsIOService */ .n();
+        const logger = new _src_logger__WEBPACK_IMPORTED_MODULE_9__/* .ConsoleLogger */ .C();
+        const xmlConverter = new _src_xml_converter__WEBPACK_IMPORTED_MODULE_8__/* .XmlConverterImpl */ .i_(fileSystem);
+        const reviewDog = new _src_reviewdog__WEBPACK_IMPORTED_MODULE_7__/* .ReviewDogImpl */ .js(ioService, logger);
+        const git = new _src_git__WEBPACK_IMPORTED_MODULE_4__/* .GitCli */ .T();
+        const annotations = new _src_annotations__WEBPACK_IMPORTED_MODULE_10__/* .AnnotationReporter */ .x(logger);
+        const summary = new _src_summary__WEBPACK_IMPORTED_MODULE_11__/* .StepSummary */ .B((path, body) => (0,fs_promises__WEBPACK_IMPORTED_MODULE_0__.appendFile)(path, body, "utf8"));
+        await (0,_src_action__WEBPACK_IMPORTED_MODULE_2__/* .runAction */ .C)(inputs, fileSystem, xmlConverter, reviewDog, logger, git, annotations, summary);
     }
     catch (error) {
-        _actions_core__WEBPACK_IMPORTED_MODULE_0__.setFailed(error);
+        _actions_core__WEBPACK_IMPORTED_MODULE_1__.setFailed(error);
     }
 }
 await main();
@@ -62830,14 +62977,46 @@ class ConsoleLogger {
 /***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
 
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
-/* harmony export */   j: () => (/* binding */ ReviewDogImpl)
+/* harmony export */   js: () => (/* binding */ ReviewDogImpl),
+/* harmony export */   zx: () => (/* binding */ ReviewDogDeliveryError)
 /* harmony export */ });
+/* unused harmony export isDeliveryFailure */
 /* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(5317);
 /* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(child_process__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var stream__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(2203);
 /* harmony import */ var stream__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__nccwpck_require__.n(stream__WEBPACK_IMPORTED_MODULE_1__);
 
 
+/**
+ * Raised when reviewdog could not deliver the report at all -- a diff fetch,
+ * network or API failure -- as opposed to exiting non-zero because lint found
+ * something. Callers may fall back to another reporter instead of failing.
+ */
+class ReviewDogDeliveryError extends Error {
+    exitCode;
+    detail;
+    constructor(exitCode, detail) {
+        super(`reviewdog could not deliver the report (exit ${exitCode}): ${detail}`);
+        this.exitCode = exitCode;
+        this.detail = detail;
+        this.name = "ReviewDogDeliveryError";
+    }
+}
+/**
+ * reviewdog exits 1 both for "found issues" and for "could not run", so the
+ * exit code alone cannot tell them apart. These are the failures that mean the
+ * report never reached GitHub, and for which retrying via annotations helps.
+ */
+const DELIVERY_FAILURE_PATTERNS = [
+    /fail to get diff/i,
+    /failed to run git (fetch|diff)/i,
+    /could not read Username/i,
+    /the diff exceeded the maximum number of files/i,
+    /fail to parse diff/i,
+];
+function isDeliveryFailure(output) {
+    return DELIVERY_FAILURE_PATTERNS.some(pattern => pattern.test(output));
+}
 class ReviewDogImpl {
     ioService;
     logger;
@@ -62854,7 +63033,7 @@ class ReviewDogImpl {
         }
         this.logger.info("Reviewdog is installed");
     }
-    async run(checkstyleXml, github_token, name, reporter, level, reviewdogFlags) {
+    async run(checkstyleXml, github_token, name, reporter, level, reviewdogFlags, extraEnv) {
         const args = [
             "-f=checkstyle",
             `-name=${name}`,
@@ -62867,14 +63046,23 @@ class ReviewDogImpl {
         this.logger.info(`Running reviewdog with args: ${args.join(" ")}`);
         const env = {
             ...process.env,
+            ...extraEnv,
             REVIEWDOG_GITHUB_API_TOKEN: github_token,
         };
+        // stderr is piped rather than inherited so we can classify the failure,
+        // and echoed straight back out so it still shows up in the job log.
         const child = (0,child_process__WEBPACK_IMPORTED_MODULE_0__.spawn)("reviewdog", args, {
             env,
-            stdio: ["pipe", "inherit", "inherit"],
+            stdio: ["pipe", "inherit", "pipe"],
         });
         const fileStream = stream__WEBPACK_IMPORTED_MODULE_1__.Readable.from(checkstyleXml);
         fileStream.pipe(child.stdin);
+        let stderr = "";
+        child.stderr.setEncoding("utf8");
+        child.stderr.on("data", (chunk) => {
+            stderr += chunk;
+            process.stderr.write(chunk);
+        });
         const exitCode = await new Promise((resolve, reject) => {
             child.on("close", code => {
                 resolve(code ?? 1);
@@ -62884,8 +63072,57 @@ class ReviewDogImpl {
             });
         });
         if (exitCode !== 0) {
+            if (isDeliveryFailure(stderr)) {
+                throw new ReviewDogDeliveryError(exitCode, stderr.trim());
+            }
             throw new Error(`reviewdog exited with non-zero code: ${exitCode}. Please inspect reviewdog logs above`);
         }
+    }
+}
+
+
+/***/ }),
+
+/***/ 417:
+/***/ ((__unused_webpack_module, __webpack_exports__, __nccwpck_require__) => {
+
+/* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
+/* harmony export */   B: () => (/* binding */ StepSummary)
+/* harmony export */ });
+const MAX_ROWS = 50;
+function cell(value) {
+    return value.replace(/\|/g, "\\|").replace(/\r?\n/g, " ");
+}
+class StepSummary {
+    appendFile;
+    constructor(appendFile) {
+        this.appendFile = appendFile;
+    }
+    isAvailable() {
+        return Boolean(process.env.GITHUB_STEP_SUMMARY);
+    }
+    async write(issues, reason) {
+        const path = process.env.GITHUB_STEP_SUMMARY;
+        if (!path) {
+            return;
+        }
+        const lines = ["### Android Lint", "", reason, ""];
+        if (issues.length === 0) {
+            lines.push("No issues reported.");
+        }
+        else {
+            lines.push(`${issues.length} issue(s):`, "", "| Severity | Issue | Location | Message |", "| --- | --- | --- | --- |");
+            for (const issue of issues.slice(0, MAX_ROWS)) {
+                const file = issue.location?.file ?? "";
+                const line = issue.location?.line;
+                const location = file ? `${file}${line ? `:${line}` : ""}` : "";
+                lines.push(`| ${cell(issue.severity ?? "")} | ${cell(issue.id ?? "")} | ${cell(location)} | ${cell(issue.message ?? "")} |`);
+            }
+            if (issues.length > MAX_ROWS) {
+                lines.push("", `_… and ${issues.length - MAX_ROWS} more._`);
+            }
+        }
+        await this.appendFile(path, `${lines.join("\n")}\n`);
     }
 }
 
@@ -62898,7 +63135,7 @@ class ReviewDogImpl {
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   i_: () => (/* binding */ XmlConverterImpl)
 /* harmony export */ });
-/* unused harmony exports getDefaultConfig, parseXmlToIssues, buildCheckstyleXml */
+/* unused harmony exports getDefaultConfig, parseXmlToIssues, toRepoRelativePath, buildCheckstyleXml */
 /* harmony import */ var fast_xml_parser__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(6879);
 /* harmony import */ var fast_xml_parser__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(fast_xml_parser__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var xmlbuilder2__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(8433);
@@ -62943,6 +63180,13 @@ function parseXmlToIssues(xmlData) {
     }
     return result;
 }
+/**
+ * Lint records absolute paths, but GitHub only renders annotations for paths
+ * relative to the repository root.
+ */
+function toRepoRelativePath(file, config) {
+    return file.replace(`${config.workspacePath}/${config.repoName}/`, "").trim();
+}
 function buildCheckstyleXml(issues, config) {
     const checkstyle = (0,xmlbuilder2__WEBPACK_IMPORTED_MODULE_1__/* .create */ .vt)({ version: "1.0", encoding: "utf-8" }).ele("checkstyle", { version: "8.0" });
     if (issues.length === 0) {
@@ -62955,9 +63199,7 @@ function buildCheckstyleXml(issues, config) {
         if (!file) {
             continue;
         }
-        const filePath = file
-            .replace(`${config.workspacePath}/${config.repoName}/`, "")
-            .trim();
+        const filePath = toRepoRelativePath(file, config);
         if (!filePath) {
             continue;
         }
@@ -62982,8 +63224,22 @@ class XmlConverterImpl {
     }
     async convertLintToCheckstyle(inputFilePath) {
         const xmlData = await this.fileSystem.readFileString(inputFilePath);
-        const issues = parseXmlToIssues(xmlData);
-        return buildCheckstyleXml(issues, getDefaultConfig());
+        const config = getDefaultConfig();
+        const issues = parseXmlToIssues(xmlData).map(issue => ({
+            ...issue,
+            location: issue.location
+                ? {
+                    ...issue.location,
+                    file: issue.location.file
+                        ? toRepoRelativePath(issue.location.file, config)
+                        : issue.location.file,
+                }
+                : issue.location,
+        }));
+        return {
+            issues,
+            checkstyleXml: buildCheckstyleXml(issues, config),
+        };
     }
 }
 
@@ -63050,6 +63306,13 @@ module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("events");
 /***/ ((module) => {
 
 module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs");
+
+/***/ }),
+
+/***/ 1943:
+/***/ ((module) => {
+
+module.exports = __WEBPACK_EXTERNAL_createRequire(import.meta.url)("fs/promises");
 
 /***/ }),
 
