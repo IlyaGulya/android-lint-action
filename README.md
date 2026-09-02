@@ -48,6 +48,12 @@ jobs:
           level: warning
 ```
 
+## 📋 Requirements
+
+This action runs on the **Node 24** Actions runtime, so it needs a runner that
+provides it (GitHub-hosted runners do; Node 24 became the default in June
+2026). Version `0.12.x` runs on Node 20 if you are pinned to an older runner.
+
 ## 📥 Installing Reviewdog
 
 You must install reviewdog before using this action. We recommend using the official [reviewdog/action-setup](https://github.com/reviewdog/action-setup) GitHub Action:
