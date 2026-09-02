@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.0.0](https://github.com/IlyaGulya/android-lint-action/compare/v0.12.1...v1.0.0) (2026-09-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* the action now requires the Node 24 Actions runtime. Runners that only provide Node 20 must stay on 0.12.x.
+
+### ✨ New Features
+
+* run on the node 24 actions runtime ([d54d5ec](https://github.com/IlyaGulya/android-lint-action/commit/d54d5eca6861d388eeadc70d445213dc92698fa1))
+* survive reviewdog delivery failures on large pull requests ([aa8c585](https://github.com/IlyaGulya/android-lint-action/commit/aa8c585ef18d06a42d3e050455bab6d86fff0116))
+
 ## [0.12.1](https://github.com/IlyaGulya/android-lint-action/compare/v0.12.0...v0.12.1) (2025-03-10)
 
 
