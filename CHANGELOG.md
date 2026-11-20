@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/IlyaGulya/android-lint-action/compare/v1.0.0...v1.0.1) (2026-11-20)
+
+
+### 🐛 Bug Fixes
+
+* retry reviewdog on transient GitHub API errors ([#79](https://github.com/IlyaGulya/android-lint-action/issues/79)) ([175e673](https://github.com/IlyaGulya/android-lint-action/commit/175e6731110151f69a979fbd05fb0fe87da4032f))
+
 ## [1.0.0](https://github.com/IlyaGulya/android-lint-action/compare/v0.12.1...v1.0.0) (2026-09-02)
 
 
