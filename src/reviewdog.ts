@@ -1,4 +1,4 @@
-import { spawn } from "child_process";
+import { execFile, spawn } from "child_process";
 import { Readable } from "stream";
 
 import { IOService } from "@/src/io";
@@ -14,6 +14,8 @@ export class ReviewDogDeliveryError extends Error {
   constructor(
     readonly exitCode: number,
     readonly detail: string,
+    /** True when the same call may succeed if it is simply made again. */
+    readonly transient = false,
   ) {
     super(
       `reviewdog could not deliver the report (exit ${exitCode}): ${detail}`,
@@ -35,8 +37,31 @@ const DELIVERY_FAILURE_PATTERNS: readonly RegExp[] = [
   /fail to parse diff/i,
 ];
 
+/**
+ * GitHub API failures that go away on their own. go-github formats an API
+ * error as `METHOD URL: STATUS TEXT`.
+ *
+ * The 404 is the one seen in practice: GitHub creates a check run and, under
+ * replication lag, answers 404 when reviewdog updates it a moment later.
+ * reviewdog retries that itself since v0.21.3, but older binaries do not.
+ */
+const TRANSIENT_DELIVERY_FAILURE_PATTERNS: readonly RegExp[] = [
+  /\b(?:GET|POST|PATCH|PUT) https:\/\/\S+: (?:404|429|5\d\d) /,
+  /secondary rate limit/i,
+  /connection reset by peer|i\/o timeout|TLS handshake timeout|unexpected EOF/i,
+];
+
+export function isTransientDeliveryFailure(output: string): boolean {
+  return TRANSIENT_DELIVERY_FAILURE_PATTERNS.some(pattern =>
+    pattern.test(output),
+  );
+}
+
 export function isDeliveryFailure(output: string): boolean {
-  return DELIVERY_FAILURE_PATTERNS.some(pattern => pattern.test(output));
+  return (
+    isTransientDeliveryFailure(output) ||
+    DELIVERY_FAILURE_PATTERNS.some(pattern => pattern.test(output))
+  );
 }
 
 export interface ReviewDog {
@@ -69,6 +94,20 @@ export class ReviewDogImpl implements ReviewDog {
       );
     }
     this.logger.info("Reviewdog is installed");
+    // Whether a transport failure is retried inside reviewdog depends on its
+    // version, so record it next to the failure.
+    const version = await this.readVersion(path);
+    if (version) {
+      this.logger.info(`reviewdog version: ${version}`);
+    }
+  }
+
+  private readVersion(path: string): Promise<string | undefined> {
+    return new Promise(resolve => {
+      execFile(path, ["-version"], { timeout: 10_000 }, (error, stdout) => {
+        resolve(error ? undefined : stdout.trim() || undefined);
+      });
+    });
   }
 
   async run(
@@ -128,7 +167,11 @@ export class ReviewDogImpl implements ReviewDog {
 
     if (exitCode !== 0) {
       if (isDeliveryFailure(stderr)) {
-        throw new ReviewDogDeliveryError(exitCode, stderr.trim());
+        throw new ReviewDogDeliveryError(
+          exitCode,
+          stderr.trim(),
+          isTransientDeliveryFailure(stderr),
+        );
       }
       throw new Error(
         `reviewdog exited with non-zero code: ${exitCode}. Please inspect reviewdog logs above`,

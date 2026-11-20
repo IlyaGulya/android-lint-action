@@ -8,7 +8,7 @@ import {
   vi,
 } from "vitest";
 
-import { runAction } from "@/src/action";
+import { RetryPolicy, runAction } from "@/src/action";
 import { Annotations } from "@/src/annotations";
 import { FileSystem } from "@/src/fs";
 import { Git } from "@/src/git";
@@ -27,6 +27,7 @@ describe("Action", () => {
   let git: MockedObject<Git>;
   let annotations: MockedObject<Annotations>;
   let summary: MockedObject<Summary>;
+  let retry: RetryPolicy & { sleep: ReturnType<typeof vi.fn> };
 
   const issues: LintIssue[] = [
     {
@@ -47,7 +48,22 @@ describe("Action", () => {
       git,
       annotations,
       summary,
+      retry,
     );
+
+  const checkRunNotFound = () =>
+    new ReviewDogDeliveryError(
+      1,
+      "failed to post result: PATCH https://api.github.com/repos/o/r/check-runs/1: 404 Not Found []",
+      true,
+    );
+
+  const errorIssue: LintIssue = {
+    id: "MissingPermission",
+    message: "Missing permissions required by the call",
+    severity: "Error",
+    location: { file: "app/src/main/java/Foo.kt", line: 10 },
+  };
 
   beforeEach(() => {
     vi.resetAllMocks();
@@ -77,6 +93,10 @@ describe("Action", () => {
     summary = {
       isAvailable: vi.fn().mockReturnValue(false),
       write: vi.fn().mockResolvedValue(undefined),
+    };
+    retry = {
+      delaysMs: [5_000, 15_000],
+      sleep: vi.fn().mockResolvedValue(undefined),
     };
   });
 
@@ -197,6 +217,98 @@ describe("Action", () => {
       await run();
 
       expect(summary.write).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("when the GitHub API fails transiently", () => {
+    it("runs reviewdog again and does not fall back once it succeeds", async () => {
+      reviewDog.run
+        .mockRejectedValueOnce(checkRunNotFound())
+        .mockResolvedValueOnce(undefined);
+
+      await expect(run()).resolves.toBeUndefined();
+
+      expect(reviewDog.run).toHaveBeenCalledTimes(2);
+      expect(retry.sleep).toHaveBeenCalledWith(5_000);
+      expect(annotations.report).not.toHaveBeenCalled();
+    });
+
+    it("falls back to annotations after the last retry", async () => {
+      reviewDog.run.mockRejectedValue(checkRunNotFound());
+
+      await expect(run()).resolves.toBeUndefined();
+
+      expect(reviewDog.run).toHaveBeenCalledTimes(3);
+      expect(retry.sleep.mock.calls).toEqual([[5_000], [15_000]]);
+      expect(annotations.report).toHaveBeenCalledWith(issues);
+    });
+
+    it("does not retry a delivery failure that is not transient", async () => {
+      reviewDog.run.mockRejectedValue(
+        new ReviewDogDeliveryError(1, "fail to get diff: 406 too_large"),
+      );
+
+      await run();
+
+      expect(reviewDog.run).toHaveBeenCalledTimes(1);
+      expect(retry.sleep).not.toHaveBeenCalled();
+    });
+  });
+
+  describe("fail level in the annotation fallback", () => {
+    const withIssues = (reported: LintIssue[], flags: string) => {
+      xmlConverter.convertLintToCheckstyle.mockResolvedValue({
+        issues: reported,
+        checkstyleXml: "<checkstyle/>",
+      });
+      mockInputs = { ...mockInputs, reviewdog_flags: flags };
+      reviewDog.run.mockRejectedValue(checkRunNotFound());
+    };
+
+    it("fails the job when an error reaches -fail-level", async () => {
+      withIssues([errorIssue], "-filter-mode=nofilter -fail-level=error");
+
+      await expect(run()).rejects.toThrow(/1 issue\(s\) at -fail-level=error/);
+      expect(annotations.report).toHaveBeenCalledWith([errorIssue]);
+    });
+
+    it("reads the space-separated flag form", async () => {
+      withIssues([errorIssue], "-filter-mode nofilter --fail-level error");
+
+      await expect(run()).rejects.toThrow(/-fail-level=error/);
+    });
+
+    it("treats -fail-on-error as -fail-level=any", async () => {
+      withIssues(issues, "-filter-mode=nofilter -fail-on-error");
+
+      await expect(run()).rejects.toThrow(/-fail-level=any/);
+    });
+
+    it("passes when no issue reaches -fail-level", async () => {
+      withIssues(issues, "-filter-mode=nofilter -fail-level=error");
+
+      await expect(run()).resolves.toBeUndefined();
+    });
+
+    it("passes with a clean report", async () => {
+      withIssues([], "-filter-mode=nofilter -fail-level=error");
+
+      await expect(run()).resolves.toBeUndefined();
+    });
+
+    it("passes when no -fail-level is set", async () => {
+      withIssues([errorIssue], "-filter-mode=nofilter");
+
+      await expect(run()).resolves.toBeUndefined();
+    });
+
+    it("does not fail under a diff-based -filter-mode", async () => {
+      withIssues([errorIssue], "-fail-level=error");
+
+      await expect(run()).resolves.toBeUndefined();
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining("-filter-mode=added"),
+      );
     });
   });
 
