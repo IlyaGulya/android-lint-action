@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import { Logger } from "@/src/logger";
 import {
   isDeliveryFailure,
+  isTransientDeliveryFailure,
   ReviewDogDeliveryError,
   ReviewDogImpl,
 } from "@/src/reviewdog";
@@ -13,6 +14,16 @@ type CloseCallback = (code: number) => void;
 // Mock the child_process module. stderr is piped by the implementation so it
 // can classify failures, so the fake child has to provide it.
 vi.mock("child_process", () => ({
+  execFile: vi.fn(
+    (
+      _file: string,
+      _args: string[],
+      _options: object,
+      cb: (error: Error | null, stdout: string) => void,
+    ) => {
+      cb(null, "0.21.3\n");
+    },
+  ),
   spawn: vi.fn().mockReturnValue({
     stdin: { write: vi.fn() },
     stderr: { setEncoding: vi.fn(), on: vi.fn() },
@@ -45,6 +56,27 @@ describe("ReviewDogImplementation", () => {
     await reviewDog.ensureInstalled();
     expect(ioService.which).toHaveBeenCalledWith("reviewdog", false);
     expect(logger.info).toHaveBeenCalledWith("Reviewdog is installed");
+    expect(logger.info).toHaveBeenCalledWith("reviewdog version: 0.21.3");
+  });
+
+  it("ensureInstalled does not fail when the version cannot be read", async () => {
+    ioService.which.mockResolvedValue("/usr/bin/reviewdog");
+    vi.mocked(child_process.execFile).mockImplementationOnce(((
+      _file: string,
+      _args: string[],
+      _options: object,
+      cb: (error: Error | null, stdout: string) => void,
+    ) => {
+      cb(new Error("boom"), "");
+    }) as unknown as typeof child_process.execFile);
+    vi.mocked(logger.info).mockClear();
+
+    await reviewDog.ensureInstalled();
+
+    expect(logger.info).toHaveBeenCalledWith("Reviewdog is installed");
+    expect(logger.info).not.toHaveBeenCalledWith(
+      expect.stringContaining("reviewdog version"),
+    );
   });
 
   it("ensureInstalled fails if reviewdog is not found", async () => {
@@ -125,6 +157,57 @@ describe("isDeliveryFailure", () => {
   });
 });
 
+describe("isTransientDeliveryFailure", () => {
+  // Verbatim from a failing inDriverAndroid `lint` job: GitHub answered 404
+  // for the check run it had created a moment before.
+  const checkRunNotFound =
+    "reviewdog: failed to post result: PATCH " +
+    "https://api.github.com/repos/inDriver/inDriverAndroid/check-runs/" +
+    "136136628464: 404 Not Found []\n";
+
+  it("recognises the 404 on a check run that was just created", () => {
+    expect(isTransientDeliveryFailure(checkRunNotFound)).toBe(true);
+    expect(isDeliveryFailure(checkRunNotFound)).toBe(true);
+  });
+
+  it.each([
+    "failed to create check: POST https://api.github.com/repos/o/r/check-runs: 502 Bad Gateway []",
+    "failed to post result: PATCH https://api.github.com/repos/o/r/check-runs/1: 503 Service Unavailable []",
+    "failed to post result: PATCH https://api.github.com/repos/o/r/check-runs/1: 429 Too Many Requests []",
+    "failed to post annotations: PATCH https://api.github.com/x: 403 You have exceeded a secondary rate limit",
+    'failed to create check: Post "https://api.github.com/x": read tcp: connection reset by peer',
+  ])("recognises %s", output => {
+    expect(isTransientDeliveryFailure(output)).toBe(true);
+  });
+
+  it("does not retry the diff-too-large response", () => {
+    expect(
+      isTransientDeliveryFailure(
+        "fail to get diff: GET https://api.github.com/repos/o/r/pulls/1: 406 " +
+          "Sorry, the diff exceeded the maximum number of files (300).",
+      ),
+    ).toBe(false);
+  });
+
+  it("does not retry a permission error", () => {
+    expect(
+      isTransientDeliveryFailure(
+        "failed to create check: POST https://api.github.com/repos/o/r/check-runs: " +
+          "403 Resource not accessible by integration []",
+      ),
+    ).toBe(false);
+  });
+
+  it("does not retry ordinary lint findings", () => {
+    expect(
+      isTransientDeliveryFailure(
+        "reviewdog: found at least one issue with severity greater than or " +
+          "equal to the given level: error\n",
+      ),
+    ).toBe(false);
+  });
+});
+
 describe("ReviewDogImpl failure classification", () => {
   const logger: Logger = { info: vi.fn(), error: vi.fn() };
 
@@ -169,6 +252,22 @@ describe("ReviewDogImpl failure classification", () => {
           "could not read Username for 'https://github.com'\n",
       ),
     ).rejects.toBeInstanceOf(ReviewDogDeliveryError);
+  });
+
+  it("marks a diff failure as not transient", async () => {
+    await expect(
+      runWith(1, "reviewdog: fail to get diff: failed to run git fetch\n"),
+    ).rejects.toMatchObject({ transient: false });
+  });
+
+  it("marks a check-run 404 as a transient delivery error", async () => {
+    const promise = runWith(
+      1,
+      "reviewdog: failed to post result: PATCH " +
+        "https://api.github.com/repos/o/r/check-runs/1: 404 Not Found []\n",
+    );
+    await expect(promise).rejects.toBeInstanceOf(ReviewDogDeliveryError);
+    await expect(promise).rejects.toMatchObject({ transient: true });
   });
 
   it("raises a plain error for a genuine lint failure", async () => {

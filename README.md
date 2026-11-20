@@ -90,7 +90,29 @@ Alternatively, you can install reviewdog manually:
 2. Converts the Android Lint XML format to Checkstyle XML format
 3. Verifies that reviewdog is installed
 4. Uses reviewdog to report the issues on GitHub pull requests or checks
-5. If reviewdog cannot deliver its report, falls back to workflow annotations
+5. If the GitHub API fails transiently, runs reviewdog again (after 5s, then 15s)
+6. If reviewdog still cannot deliver its report, falls back to workflow
+   annotations, and keeps failing the job on issues that reach `-fail-level`
+
+## 🔁 Transient GitHub API errors
+
+GitHub sometimes answers `404` for a check run it created a moment earlier,
+and the API occasionally returns `5xx` or a rate limit:
+
+```
+reviewdog: failed to post result: PATCH https://api.github.com/repos/o/r/check-runs/1: 404 Not Found []
+```
+
+reviewdog retries the `404` itself since v0.21.3; older binaries exit 1 and the
+job goes red although lint passed. The action detects `404`, `429`, `5xx`,
+secondary rate limits and dropped connections, and runs reviewdog up to two
+more times. The reviewdog version is printed in the log.
+
+If every attempt fails, the issues go to annotations as described below. When
+`-filter-mode=nofilter` is set, the job still fails if an issue reaches
+`-fail-level`, so a transport error cannot hide a real lint error. Under a
+diff-based filter mode the action cannot tell which issues count, so it
+reports them and does not fail.
 
 ## 🐘 Large pull requests
 

@@ -62680,6 +62680,7 @@ exports.YAMLWriter = YAMLWriter_1.YAMLWriter;
 /* harmony export */ __nccwpck_require__.d(__webpack_exports__, {
 /* harmony export */   C: () => (/* binding */ runAction)
 /* harmony export */ });
+/* unused harmony export DEFAULT_RETRY_POLICY */
 /* harmony import */ var _src_reviewdog__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(6223);
 
 /**
@@ -62703,7 +62704,99 @@ async function skipGitFetchEnv(git, logger) {
         "so reviewdog resolves the diff locally.");
     return { REVIEWDOG_SKIP_GIT_FETCH: "true" };
 }
-async function runAction(inputs, fileSystem, xmlConverter, reviewDog, logger, git, annotations, summary) {
+const DEFAULT_RETRY_POLICY = {
+    delaysMs: [5_000, 15_000],
+    sleep: ms => new Promise(resolve => setTimeout(resolve, ms)),
+};
+/**
+ * Runs reviewdog, running it again while it fails on a GitHub API error that
+ * goes away on its own. Every attempt creates its own check run, and GitHub
+ * shows the newest one for a given name.
+ */
+async function runReviewDogWithRetry(run, retry, logger) {
+    const attempts = retry.delaysMs.length + 1;
+    for (let attempt = 1;; attempt++) {
+        try {
+            await run();
+            return;
+        }
+        catch (error) {
+            if (!(error instanceof _src_reviewdog__WEBPACK_IMPORTED_MODULE_0__/* .ReviewDogDeliveryError */ .zx) ||
+                !error.transient ||
+                attempt === attempts) {
+                throw error;
+            }
+            const delay = retry.delaysMs[attempt - 1];
+            logger.info(`reviewdog hit a transient GitHub API error (attempt ${attempt}/${attempts}); ` +
+                `retrying in ${delay / 1000}s.`);
+            await retry.sleep(delay);
+        }
+    }
+}
+/** Value of a Go-style flag: `-name=v`, `--name=v`, `-name v` or `--name v`. */
+function flagValue(tokens, name) {
+    for (let i = 0; i < tokens.length; i++) {
+        const token = tokens[i] ?? "";
+        for (const prefix of [`-${name}`, `--${name}`]) {
+            if (token.startsWith(`${prefix}=`)) {
+                return token.slice(prefix.length + 1);
+            }
+            if (token === prefix) {
+                return tokens[i + 1];
+            }
+        }
+    }
+    return undefined;
+}
+/** Severity order used by reviewdog's -fail-level. */
+function severityRank(severity) {
+    switch ((severity ?? "").toLowerCase()) {
+        case "fatal":
+        case "error":
+            return 3;
+        case "warning":
+            return 2;
+        default:
+            return 1;
+    }
+}
+const FAIL_LEVEL_RANK = {
+    any: 0,
+    info: 1,
+    warning: 2,
+    error: 3,
+};
+/**
+ * reviewdog fails the job when an issue reaches -fail-level. The annotation
+ * fallback must keep that, or a transport error would turn a real lint error
+ * into a green check.
+ *
+ * Under a diff-based -filter-mode reviewdog only counts issues inside the
+ * diff, which the fallback cannot see, so there it reports and does not fail.
+ */
+function enforceFailLevel(issues, reviewdogFlags, logger) {
+    const tokens = (reviewdogFlags ?? "").split(/\s+/).filter(Boolean);
+    const failLevel = flagValue(tokens, "fail-level") ??
+        (tokens.some(t => /^--?fail-on-error(=true)?$/.test(t)) ? "any" : "none");
+    const threshold = FAIL_LEVEL_RANK[failLevel.toLowerCase()];
+    if (threshold === undefined) {
+        return;
+    }
+    const blocking = issues.filter(i => severityRank(i.severity) >= threshold);
+    if (blocking.length === 0) {
+        return;
+    }
+    const filterMode = flagValue(tokens, "filter-mode") ?? "added";
+    if (filterMode !== "nofilter") {
+        logger.error(`${blocking.length} issue(s) reach -fail-level=${failLevel}, but ` +
+            `-filter-mode=${filterMode} needs the diff to decide which of them ` +
+            "count, so the job is not failed.");
+        return;
+    }
+    throw new Error(`Android Lint found ${blocking.length} issue(s) at -fail-level=${failLevel} ` +
+        "or above. See the workflow annotations.");
+}
+async function runAction(inputs, fileSystem, xmlConverter, reviewDog, logger, git, annotations, summary, retry = DEFAULT_RETRY_POLICY) {
     logger.info("Running android-lint-action");
     logger.info(`Converting ${inputs.lint_xml_file} to Checkstyle format...`);
     const report = await xmlConverter.convertLintToCheckstyle(inputs.lint_xml_file);
@@ -62711,7 +62804,7 @@ async function runAction(inputs, fileSystem, xmlConverter, reviewDog, logger, gi
     await reviewDog.ensureInstalled();
     const extraEnv = await skipGitFetchEnv(git, logger);
     try {
-        await reviewDog.run(report.checkstyleXml, inputs.github_token, "Android Lint", inputs.reporter, inputs.level, inputs.reviewdog_flags, extraEnv);
+        await runReviewDogWithRetry(() => reviewDog.run(report.checkstyleXml, inputs.github_token, "Android Lint", inputs.reporter, inputs.level, inputs.reviewdog_flags, extraEnv), retry, logger);
     }
     catch (error) {
         if (!(error instanceof _src_reviewdog__WEBPACK_IMPORTED_MODULE_0__/* .ReviewDogDeliveryError */ .zx)) {
@@ -62727,6 +62820,7 @@ async function runAction(inputs, fileSystem, xmlConverter, reviewDog, logger, gi
             await summary.write(report.issues, "reviewdog could not post its report, so the issues below are " +
                 "reported as workflow annotations instead.");
         }
+        enforceFailLevel(report.issues, inputs.reviewdog_flags, logger);
     }
     logger.info("Finished android-lint-action");
 }
@@ -62980,7 +63074,7 @@ class ConsoleLogger {
 /* harmony export */   js: () => (/* binding */ ReviewDogImpl),
 /* harmony export */   zx: () => (/* binding */ ReviewDogDeliveryError)
 /* harmony export */ });
-/* unused harmony export isDeliveryFailure */
+/* unused harmony exports isTransientDeliveryFailure, isDeliveryFailure */
 /* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_0__ = __nccwpck_require__(5317);
 /* harmony import */ var child_process__WEBPACK_IMPORTED_MODULE_0___default = /*#__PURE__*/__nccwpck_require__.n(child_process__WEBPACK_IMPORTED_MODULE_0__);
 /* harmony import */ var stream__WEBPACK_IMPORTED_MODULE_1__ = __nccwpck_require__(2203);
@@ -62995,10 +63089,14 @@ class ConsoleLogger {
 class ReviewDogDeliveryError extends Error {
     exitCode;
     detail;
-    constructor(exitCode, detail) {
+    transient;
+    constructor(exitCode, detail, 
+    /** True when the same call may succeed if it is simply made again. */
+    transient = false) {
         super(`reviewdog could not deliver the report (exit ${exitCode}): ${detail}`);
         this.exitCode = exitCode;
         this.detail = detail;
+        this.transient = transient;
         this.name = "ReviewDogDeliveryError";
     }
 }
@@ -63014,8 +63112,25 @@ const DELIVERY_FAILURE_PATTERNS = [
     /the diff exceeded the maximum number of files/i,
     /fail to parse diff/i,
 ];
+/**
+ * GitHub API failures that go away on their own. go-github formats an API
+ * error as `METHOD URL: STATUS TEXT`.
+ *
+ * The 404 is the one seen in practice: GitHub creates a check run and, under
+ * replication lag, answers 404 when reviewdog updates it a moment later.
+ * reviewdog retries that itself since v0.21.3, but older binaries do not.
+ */
+const TRANSIENT_DELIVERY_FAILURE_PATTERNS = [
+    /\b(?:GET|POST|PATCH|PUT) https:\/\/\S+: (?:404|429|5\d\d) /,
+    /secondary rate limit/i,
+    /connection reset by peer|i\/o timeout|TLS handshake timeout|unexpected EOF/i,
+];
+function isTransientDeliveryFailure(output) {
+    return TRANSIENT_DELIVERY_FAILURE_PATTERNS.some(pattern => pattern.test(output));
+}
 function isDeliveryFailure(output) {
-    return DELIVERY_FAILURE_PATTERNS.some(pattern => pattern.test(output));
+    return (isTransientDeliveryFailure(output) ||
+        DELIVERY_FAILURE_PATTERNS.some(pattern => pattern.test(output)));
 }
 class ReviewDogImpl {
     ioService;
@@ -63032,6 +63147,19 @@ class ReviewDogImpl {
                 "See README.md for installation instructions.");
         }
         this.logger.info("Reviewdog is installed");
+        // Whether a transport failure is retried inside reviewdog depends on its
+        // version, so record it next to the failure.
+        const version = await this.readVersion(path);
+        if (version) {
+            this.logger.info(`reviewdog version: ${version}`);
+        }
+    }
+    readVersion(path) {
+        return new Promise(resolve => {
+            (0,child_process__WEBPACK_IMPORTED_MODULE_0__.execFile)(path, ["-version"], { timeout: 10_000 }, (error, stdout) => {
+                resolve(error ? undefined : stdout.trim() || undefined);
+            });
+        });
     }
     async run(checkstyleXml, github_token, name, reporter, level, reviewdogFlags, extraEnv) {
         const args = [
@@ -63073,7 +63201,7 @@ class ReviewDogImpl {
         });
         if (exitCode !== 0) {
             if (isDeliveryFailure(stderr)) {
-                throw new ReviewDogDeliveryError(exitCode, stderr.trim());
+                throw new ReviewDogDeliveryError(exitCode, stderr.trim(), isTransientDeliveryFailure(stderr));
             }
             throw new Error(`reviewdog exited with non-zero code: ${exitCode}. Please inspect reviewdog logs above`);
         }
